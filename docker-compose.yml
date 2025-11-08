@@ -10,12 +10,6 @@ services:
     container_name: imalink-web
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       - NODE_ENV=production
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.imalink-web.rule=Host(`imalink.trollfjell.com`)"
-      - "traefik.http.routers.imalink-web.entrypoints=websecure"
-      - "traefik.http.routers.imalink-web.tls.certresolver=letsencrypt"
-      - "traefik.http.services.imalink-web.loadbalancer.server.port=3000"
