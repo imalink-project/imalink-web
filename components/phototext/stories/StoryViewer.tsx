@@ -29,6 +29,7 @@ interface PhotoTextContent {
 
 export function StoryViewer({ story }: StoryViewerProps) {
   const [content, setContent] = useState<PhotoTextContent | null>(null);
+  const [imageUrls, setImageUrls] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     // Parse JSONB content
@@ -36,6 +37,51 @@ export function StoryViewer({ story }: StoryViewerProps) {
       setContent(story.content as unknown as PhotoTextContent);
     }
   }, [story.content]);
+
+  useEffect(() => {
+    // Load all coldpreview images with authentication
+    const loadImages = async () => {
+      if (!content) return;
+
+      const urls = new Map<string, string>();
+      
+      // Load cover image
+      if (story.cover_image_hash) {
+        try {
+          const url = await apiClient.fetchColdPreview(story.cover_image_hash);
+          urls.set(story.cover_image_hash, url);
+        } catch (error) {
+          console.error('Failed to load cover image:', error);
+        }
+      }
+
+      // Load all image blocks
+      for (const block of content.blocks) {
+        if (block.type === 'image' && block.imageId) {
+          try {
+            const url = await apiClient.fetchColdPreview(block.imageId);
+            urls.set(block.imageId, url);
+          } catch (error) {
+            console.error('Failed to load image:', block.imageId, error);
+          }
+        }
+        if (block.type === 'images' && block.images) {
+          for (const img of block.images) {
+            try {
+              const url = await apiClient.fetchColdPreview(img.imageId);
+              urls.set(img.imageId, url);
+            } catch (error) {
+              console.error('Failed to load gallery image:', img.imageId, error);
+            }
+          }
+        }
+      }
+
+      setImageUrls(urls);
+    };
+
+    loadImages();
+  }, [content, story.cover_image_hash]);
 
   if (!content || !content.blocks) {
     return (
@@ -55,10 +101,10 @@ export function StoryViewer({ story }: StoryViewerProps) {
       )}
       
       {/* Cover Image - wide, not too tall */}
-      {story.cover_image_hash && (
+      {story.cover_image_hash && imageUrls.get(story.cover_image_hash) && (
         <div className="w-full aspect-[21/9] relative overflow-hidden rounded-lg bg-muted -mx-4 sm:mx-0">
           <img
-            src={apiClient.getColdPreviewUrl(story.cover_image_hash)}
+            src={imageUrls.get(story.cover_image_hash)}
             alt={story.cover_image_alt || content.title || ''}
             className="w-full h-full object-cover"
           />
@@ -75,14 +121,14 @@ export function StoryViewer({ story }: StoryViewerProps) {
       {/* Blocks */}
       <div className="space-y-6">
         {content.blocks.map((block, index) => (
-          <Block key={index} block={block} />
+          <Block key={index} block={block} imageUrls={imageUrls} />
         ))}
       </div>
     </article>
   );
 }
 
-function Block({ block }: { block: PhotoTextBlock }) {
+function Block({ block, imageUrls }: { block: PhotoTextBlock; imageUrls: Map<string, string> }) {
   switch (block.type) {
     case 'heading':
       return <Heading level={block.level || 1} content={block.content} />;
@@ -91,10 +137,10 @@ function Block({ block }: { block: PhotoTextBlock }) {
       return <Paragraph content={block.content} />;
     
     case 'image':
-      return <SingleImage imageId={block.imageId!} caption={block.caption} alt={block.alt} />;
+      return <SingleImage imageId={block.imageId!} caption={block.caption} alt={block.alt} imageUrls={imageUrls} />;
     
     case 'images':
-      return <ImageGallery images={block.images || []} caption={block.caption} />;
+      return <ImageGallery images={block.images || []} caption={block.caption} imageUrls={imageUrls} />;
     
     case 'list':
       return <List items={block.items || []} ordered={block.ordered} />;
@@ -143,8 +189,18 @@ function Paragraph({ content }: { content?: Array<any> }) {
   );
 }
 
-function SingleImage({ imageId, caption, alt }: { imageId: string; caption?: string; alt?: string }) {
-  const imageUrl = apiClient.getColdPreviewUrl(imageId);
+function SingleImage({ imageId, caption, alt, imageUrls }: { imageId: string; caption?: string; alt?: string; imageUrls: Map<string, string> }) {
+  const imageUrl = imageUrls.get(imageId);
+  
+  if (!imageUrl) {
+    return (
+      <figure className="my-8 border rounded-lg p-4 bg-muted/20">
+        <div className="w-full aspect-video bg-muted flex items-center justify-center rounded">
+          <p className="text-muted-foreground text-sm">Loading image...</p>
+        </div>
+      </figure>
+    );
+  }
   
   return (
     <figure className="my-8 border rounded-lg p-4 bg-muted/20">
@@ -162,7 +218,7 @@ function SingleImage({ imageId, caption, alt }: { imageId: string; caption?: str
   );
 }
 
-function ImageGallery({ images, caption }: { images: Array<any>; caption?: string }) {
+function ImageGallery({ images, caption, imageUrls }: { images: Array<any>; caption?: string; imageUrls: Map<string, string> }) {
   const gridClass = images.length === 2 
     ? 'grid-cols-2' 
     : images.length === 3 
@@ -172,15 +228,24 @@ function ImageGallery({ images, caption }: { images: Array<any>; caption?: strin
   return (
     <figure className="my-8 border rounded-lg p-4 bg-muted/20">
       <div className={`grid ${gridClass} gap-4`}>
-        {images.map((img, i) => (
-          <div key={i} className="relative aspect-square overflow-hidden rounded">
-            <img
-              src={apiClient.getColdPreviewUrl(img.imageId)}
-              alt={img.alt || img.caption || ''}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        ))}
+        {images.map((img, i) => {
+          const imageUrl = imageUrls.get(img.imageId);
+          return (
+            <div key={i} className="relative aspect-square overflow-hidden rounded">
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={img.alt || img.caption || ''}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-muted flex items-center justify-center">
+                  <p className="text-muted-foreground text-xs">Loading...</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
       {caption && (
         <figcaption className="mt-3 text-center text-sm text-muted-foreground">
