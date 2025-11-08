@@ -160,7 +160,7 @@ class ApiClient {
 
     const response = await fetch(
       `${this.baseUrl}/photos/?${queryParams.toString()}`,
-      { headers: this.getHeaders(false) } // Allow anonymous access
+      { headers: this.getHeaders() } // Send auth if available
     );
 
     return this.handleResponse<PaginatedResponse<Photo>>(response);
@@ -168,7 +168,7 @@ class ApiClient {
 
   async getPhoto(hothash: string): Promise<Photo> {
     const response = await fetch(`${this.baseUrl}/photos/${hothash}/`, {
-      headers: this.getHeaders(false), // Allow anonymous access
+      headers: this.getHeaders(), // Send auth if available
     });
 
     return this.handleResponse<Photo>(response);
@@ -353,7 +353,7 @@ class ApiClient {
   // Authors (Phase 1: Shared metadata tags)
   async getAuthors(): Promise<{ authors: Author[] }> {
     const response = await fetch(`${this.baseUrl}/authors/`, {
-      headers: this.getHeaders(false), // No auth required for GET
+      headers: this.getHeaders(), // Send auth if available, anonymous access supported
     });
 
     return this.handleResponse<{ authors: Author[] }>(response);
@@ -361,7 +361,7 @@ class ApiClient {
 
   async getAuthor(id: number): Promise<Author> {
     const response = await fetch(`${this.baseUrl}/authors/${id}/`, {
-      headers: this.getHeaders(false), // No auth required for GET
+      headers: this.getHeaders(), // Send auth if available, anonymous access supported
     });
 
     return this.handleResponse<Author>(response);
@@ -550,7 +550,7 @@ class ApiClient {
     if (filters?.limit !== undefined) params.append('limit', filters.limit.toString());
     
     const response = await fetch(`${this.baseUrl}/phototext/?${params.toString()}`, {
-      headers: this.getHeaders(false), // Allow anonymous access
+      headers: this.getHeaders(), // Send auth if available
     });
 
     return this.handleResponse<{ documents: PhotoTextDocumentSummary[]; total: number }>(response);
@@ -558,7 +558,7 @@ class ApiClient {
 
   async getPhotoText(id: number): Promise<PhotoTextDocument> {
     const response = await fetch(`${this.baseUrl}/phototext/${id}/`, {
-      headers: this.getHeaders(false), // Allow anonymous access
+      headers: this.getHeaders(), // Send auth if available
     });
 
     return this.handleResponse<PhotoTextDocument>(response);
