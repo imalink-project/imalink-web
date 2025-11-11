@@ -21,6 +21,10 @@ import type {
   PhotoTextDocumentCreate,
   PhotoTextDocumentUpdate,
   Author,
+  TimelineYearsResponse,
+  TimelineMonthsResponse,
+  TimelineDaysResponse,
+  TimelineHoursResponse,
 } from './types';
 
 const API_BASE_URL = 'https://api.trollfjell.com/api/v1';
@@ -593,6 +597,55 @@ class ApiClient {
     if (response.status !== 204) {
       await this.handleResponse<void>(response);
     }
+  }
+
+  // Timeline endpoints
+  async getTimelineYears(params?: { from_year?: number; to_year?: number }): Promise<TimelineYearsResponse> {
+    const queryParams = new URLSearchParams();
+    if (params?.from_year) queryParams.set('from_year', params.from_year.toString());
+    if (params?.to_year) queryParams.set('to_year', params.to_year.toString());
+
+    const url = `${this.baseUrl}/photos/timeline/years/${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    const response = await fetch(url, {
+      headers: this.getHeaders(),
+    });
+
+    return this.handleResponse<TimelineYearsResponse>(response);
+  }
+
+  async getTimelineMonths(year: number): Promise<TimelineMonthsResponse> {
+    const response = await fetch(`${this.baseUrl}/photos/timeline/year/${year}/months/`, {
+      headers: this.getHeaders(),
+    });
+
+    return this.handleResponse<TimelineMonthsResponse>(response);
+  }
+
+  async getTimelineDays(year: number, month: number): Promise<TimelineDaysResponse> {
+    const response = await fetch(`${this.baseUrl}/photos/timeline/year/${year}/month/${month}/days/`, {
+      headers: this.getHeaders(),
+    });
+
+    return this.handleResponse<TimelineDaysResponse>(response);
+  }
+
+  async getTimelineHours(year: number, month: number, day: number): Promise<TimelineHoursResponse> {
+    const response = await fetch(`${this.baseUrl}/photos/timeline/year/${year}/month/${month}/day/${day}/hours/`, {
+      headers: this.getHeaders(),
+    });
+
+    return this.handleResponse<TimelineHoursResponse>(response);
+  }
+
+  async getTimelinePhotos(year: number, month: number, day: number, hour: number): Promise<PaginatedResponse<Photo>> {
+    const response = await fetch(
+      `${this.baseUrl}/photos/timeline/year/${year}/month/${month}/day/${day}/hour/${hour}/photos/`,
+      {
+        headers: this.getHeaders(),
+      }
+    );
+
+    return this.handleResponse<PaginatedResponse<Photo>>(response);
   }
 }
 

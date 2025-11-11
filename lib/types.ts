@@ -134,6 +134,48 @@ export const VISIBILITY_LEVELS: { value: VisibilityLevel; label: string; descrip
   }
 ];
 
+// ===== Timeline Types =====
+
+export interface TimelineYearNode {
+  year: number;
+  count: number;
+  first_photo: string; // hothash
+}
+
+export interface TimelineMonthNode {
+  month: number; // 1-12
+  count: number;
+  first_photo: string;
+}
+
+export interface TimelineDayNode {
+  day: number; // 1-31
+  count: number;
+  first_photo: string;
+}
+
+export interface TimelineHourNode {
+  hour: number; // 0-23
+  count: number;
+  first_photo: string;
+}
+
+export interface TimelineYearsResponse {
+  years: TimelineYearNode[];
+}
+
+export interface TimelineMonthsResponse {
+  months: TimelineMonthNode[];
+}
+
+export interface TimelineDaysResponse {
+  days: TimelineDayNode[];
+}
+
+export interface TimelineHoursResponse {
+  hours: TimelineHourNode[];
+}
+
 // ===== Utility Types =====
 
 export interface ApiError {
