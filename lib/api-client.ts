@@ -648,23 +648,20 @@ class ApiClient {
     return this.handleResponse<PaginatedResponse<Photo>>(response);
   }
 
-  // Photo import with imalink-core (via backend proxy to avoid CORS)
+  // Photo import with imalink-core
   async processImageWithCore(file: File): Promise<any> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('image', file);
 
-    // Send to backend which will proxy to core.trollfjell.com
-    const response = await fetch(`${this.baseUrl}/photos/process-with-core`, {
+    // Send directly to core.trollfjell.com (CORS must be configured there)
+    const response = await fetch('https://core.trollfjell.com/api/v1/process', {
       method: 'POST',
-      headers: {
-        'Authorization': this.token ? `Bearer ${this.token}` : '',
-      },
       body: formData,
     });
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(`Image processing failed: ${error}`);
+      throw new Error(`Core processing failed: ${error}`);
     }
 
     return response.json();
