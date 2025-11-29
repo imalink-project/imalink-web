@@ -19,8 +19,14 @@ export default function Home() {
 
   // Load initial search results
   useEffect(() => {
-    if (isAuthenticated && !activeBildelisteId) {
-      handleSearch(searchParams);
+    if (isAuthenticated) {
+      // Check if we should refresh (e.g., after photo import)
+      const params = new URLSearchParams(window.location.search);
+      const shouldRefresh = params.get('refresh') === 'true';
+      
+      if (shouldRefresh || !activeBildelisteId) {
+        handleSearch(searchParams);
+      }
     }
   }, [isAuthenticated]);
 

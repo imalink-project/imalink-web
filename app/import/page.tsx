@@ -11,8 +11,9 @@ export default function ImportPage() {
   const [error, setError] = useState<string | null>(null);
 
   const handleImportSuccess = () => {
-    // Redirect to home page after successful import
-    router.push('/');
+    // Redirect to home page after successful import with refresh
+    router.push('/?refresh=true');
+    router.refresh();
   };
 
   return (
