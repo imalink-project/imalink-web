@@ -653,8 +653,8 @@ class ApiClient {
     const formData = new FormData();
     formData.append('image', file);
 
-    // Send directly to core.trollfjell.com (CORS must be configured there)
-    const response = await fetch('https://core.trollfjell.com/api/v1/process', {
+    // Send directly to core.trollfjell.com
+    const response = await fetch('https://core.trollfjell.com/v1/process', {
       method: 'POST',
       body: formData,
     });
