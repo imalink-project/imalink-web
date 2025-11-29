@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Upload, X, Loader2, CheckCircle } from 'lucide-react';
+import { Upload, Loader2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PhotoMetadataEditor } from '@/components/photo-metadata-editor';
@@ -89,7 +89,7 @@ export function PhotoImportUploader({ onSuccess, onError }: PhotoImportUploaderP
     reader.readAsDataURL(file);
 
     try {
-      // Send to imalink-core for processing
+      // Send to core.trollfjell.com for processing
       setUploadState('processing');
       const schema = await apiClient.processImageWithCore(file);
       

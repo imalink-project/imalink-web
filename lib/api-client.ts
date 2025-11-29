@@ -651,10 +651,10 @@ class ApiClient {
   // Photo import with imalink-core
   async processImageWithCore(file: File): Promise<any> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('image', file);
 
-    // Send to core.imalink.com for processing
-    const response = await fetch('https://core.imalink.com/api/v1/photos/create', {
+    // Send to core.trollfjell.com for processing
+    const response = await fetch('https://core.trollfjell.com/api/v1/process', {
       method: 'POST',
       body: formData,
     });
