@@ -270,13 +270,13 @@ export interface paths {
         };
         /**
          * List Authors
-         * @description List all authors for the current user with pagination
+         * @description List all authors (shared across all users) with pagination
          */
         get: operations["list_authors_api_v1_authors__get"];
         put?: never;
         /**
          * Create Author
-         * @description Create a new author
+         * @description Create a new author (requires authentication)
          */
         post: operations["create_author_api_v1_authors__post"];
         delete?: never;
@@ -294,18 +294,18 @@ export interface paths {
         };
         /**
          * Get Author
-         * @description Get author by ID
+         * @description Get author by ID (available to all users)
          */
         get: operations["get_author_api_v1_authors__author_id__get"];
         /**
          * Update Author
-         * @description Update an existing author
+         * @description Update an existing author (requires authentication)
          */
         put: operations["update_author_api_v1_authors__author_id__put"];
         post?: never;
         /**
          * Delete Author
-         * @description Delete an author
+         * @description Delete an author (requires authentication)
          */
         delete: operations["delete_author_api_v1_authors__author_id__delete"];
         options?: never;
@@ -454,7 +454,7 @@ export interface paths {
         };
         /**
          * List Photos
-         * @description Get paginated list of photos with metadata (user-scoped)
+         * @description Get paginated list of photos with metadata (supports anonymous access to public photos)
          */
         get: operations["list_photos_api_v1_photos__get"];
         put?: never;
@@ -490,42 +490,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/photos/new-photo": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Photo With File
-         * @description Create new Photo with initial ImageFile
-         *
-         *     USE CASE: Uploading a completely new, unique photo
-         *     - Hotpreview and exif_dict stored in Photo (visual data)
-         *     - ImageFile stores only file metadata
-         *     - A new Photo will always be created
-         *
-         *     WORKFLOW:
-         *     1. Validate hotpreview data
-         *     2. Generate photo_hothash from hotpreview (SHA256)
-         *     3. Check if Photo already exists (if yes → error 409)
-         *     4. Create new Photo with visual data
-         *     5. Create ImageFile with file metadata
-         *     6. Return success response
-         *
-         *     Returns:
-         *         ImageFileUploadResponse with photo_created=True
-         */
-        post: operations["create_photo_with_file_api_v1_photos_new_photo_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/photos/{hothash}/files": {
         parameters: {
             query?: never;
@@ -533,30 +497,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
         /**
-         * Add File To Photo
-         * @description Add new ImageFile to an existing Photo
+         * Get Photo Files
+         * @description Get list of ImageFiles for a photo
          *
-         *     USE CASE: Adding companion files to existing photos
-         *     - RAW file for existing JPEG photo
-         *     - Different format/resolution of same photo
-         *     - Additional file versions
-         *
-         *     REQUIREMENTS:
-         *     - Photo with {hothash} must exist and belong to user
-         *     - NO hotpreview or exif_dict (Photo already has these)
-         *
-         *     WORKFLOW:
-         *     1. Validate that Photo with hothash exists
-         *     2. Create ImageFile with only file metadata
-         *     3. Return success response
-         *
-         *     Returns:
-         *         ImageFileUploadResponse with photo_created=False
+         *     Returns all files associated with this photo (JPEG, RAW, etc.)
          */
-        post: operations["add_file_to_photo_api_v1_photos__hothash__files_post"];
+        get: operations["get_photo_files_api_v1_photos__hothash__files_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -572,7 +521,7 @@ export interface paths {
         };
         /**
          * Get Photo
-         * @description Get single photo by hash (user-scoped)
+         * @description Get single photo by hash (supports anonymous access for public photos)
          */
         get: operations["get_photo_api_v1_photos__hothash__get"];
         /**
@@ -757,6 +706,83 @@ export interface paths {
         get: operations["get_photo_stack_api_v1_photos__hothash__stack_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/photos/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Photo
+         * @description Create Photo from PhotoCreateSchema (New Architecture)
+         *
+         *     PhotoCreateSchema is the complete JSON package from imalink-core server containing
+         *     all image processing results. Frontend sends image to imalink-core server,
+         *     receives PhotoCreateSchema, then sends it here with user organization metadata.
+         *
+         *     Flow:
+         *     1. Frontend → imalink-core server (POST /process) → PhotoCreateSchema
+         *     2. Frontend → Backend (POST /photos/create) → Photo created
+         *
+         *     This replaces the old POST /photos endpoint which did image processing.
+         *     Backend now only stores metadata and previews from PhotoCreateSchema.
+         */
+        post: operations["create_photo_api_v1_photos_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/photos/register-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register Image
+         * @description Register image by sending to imalink-core for processing (Convenience endpoint)
+         *
+         *     **Use case**: Quick web upload when user doesn't have desktop app available.
+         *     **Not recommended for**: Batch imports (use desktop app with local imalink-core instead).
+         *
+         *     Flow:
+         *     1. Frontend uploads raw image file (multipart/form-data)
+         *     2. Backend sends to imalink-core server (localhost:8001) for processing
+         *     3. imalink-core returns PhotoCreateSchema (metadata + previews)
+         *     4. Backend stores PhotoCreateSchema (same as POST /create endpoint)
+         *
+         *     Note: Original image is NOT stored on server, only metadata and previews.
+         *
+         *     Args:
+         *         file: Image file (JPEG, PNG, etc.)
+         *         import_session_id: Optional import session (defaults to protected 'Quick Add')
+         *         rating: Star rating 0-5
+         *         visibility: Visibility level (private, space, authenticated, public)
+         *         author_id: Optional photographer/author
+         *         coldpreview_size: Optional size for larger preview (e.g., 2560px)
+         *
+         *     Returns:
+         *         PhotoCreateResponse: Created photo metadata
+         *
+         *     Raises:
+         *         400: If image processing fails or invalid image
+         *         500: If imalink-core service unavailable
+         */
+        post: operations["register_image_api_v1_photos_register_image_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1100,6 +1126,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/timeline/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Timeline
+         * @description Get hierarchical timeline aggregation of photos.
+         *
+         *     Navigate photos by time with automatic aggregation into buckets.
+         *     Each bucket includes photo count, representative preview, and date range.
+         *
+         *     **Granularity Levels:**
+         *     - `year`: Aggregate by year (no parameters required)
+         *     - `month`: Aggregate by month within a year (requires `year`)
+         *     - `day`: Aggregate by day within a month (requires `year` and `month`)
+         *     - `hour`: Aggregate by hour within a day (requires `year`, `month`, and `day`)
+         *
+         *     **Preview Selection:**
+         *     1. Highest rated photo (rating 4-5)
+         *     2. Temporally centered photo (middle of period)
+         *     3. First photo in period
+         *
+         *     **Visibility Filtering:**
+         *     - Anonymous users: Only `public` photos
+         *     - Authenticated users: Own photos + `authenticated` + `public` photos
+         *     - Empty buckets (no accessible photos) are excluded
+         *
+         *     **Examples:**
+         *     - `GET /timeline?granularity=year` - All years with photos
+         *     - `GET /timeline?granularity=month&year=2024` - Months in 2024
+         *     - `GET /timeline?granularity=day&year=2024&month=6` - Days in June 2024
+         *     - `GET /timeline?granularity=hour&year=2024&month=6&day=15` - Hours on June 15, 2024
+         *
+         *     Returns:
+         *         TimelineResponse with array of time buckets and metadata
+         */
+        get: operations["get_timeline_api_v1_timeline__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/photo-stacks/": {
         parameters: {
             query?: never;
@@ -1218,16 +1292,14 @@ export interface paths {
         };
         /**
          * List Documents
-         * @description List PhotoText documents for the current user.
+         * @description List PhotoText documents with optional filtering and sorting.
          *
-         *     Supports filtering by:
-         *     - document_type: 'general', 'album', or 'slideshow'
-         *     - is_published: true/false
+         *     Access rules (Phase 1):
+         *     - Anonymous users: Only public documents
+         *     - Authenticated users: Own documents + public documents
          *
-         *     Results can be sorted by:
-         *     - created_at (default): Timeline/blog order
-         *     - updated_at: Recently modified
-         *     - title: Alphabetical
+         *     Supports filtering by document_type and publication status.
+         *     Returns paginated results with total count.
          */
         get: operations["list_documents_api_v1_phototext__get"];
         put?: never;
@@ -1261,8 +1333,11 @@ export interface paths {
          * Get Document
          * @description Get a single PhotoText document by ID.
          *
+         *     Access rules (Phase 1):
+         *     - Anonymous users: Only public documents
+         *     - Authenticated users: Own documents + public documents
+         *
          *     Returns the complete document including content JSON.
-         *     User can only access their own documents.
          */
         get: operations["get_document_api_v1_phototext__document_id__get"];
         /**
@@ -1480,6 +1555,15 @@ export interface components {
              */
             bio?: string | null;
         };
+        /** Body_register_image_api_v1_photos_register_image_post */
+        Body_register_image_api_v1_photos_register_image_post: {
+            /**
+             * File
+             * Format: binary
+             * @description Image file to register
+             */
+            file: string;
+        };
         /** Body_upload_coldpreview_api_v1_photos__hothash__coldpreview_put */
         Body_upload_coldpreview_api_v1_photos__hothash__coldpreview_put: {
             /**
@@ -1509,7 +1593,7 @@ export interface components {
         CoverImage: {
             /**
              * Hash
-             * @description SHA256 hash (sha256_ + 64 hex chars)
+             * @description Photo hothash (64-char SHA256)
              */
             hash: string;
             /**
@@ -1549,6 +1633,24 @@ export interface components {
             database_size_mb: number;
         };
         /**
+         * DateRange
+         * @description Date range for a timeline bucket.
+         */
+        DateRange: {
+            /**
+             * First
+             * Format: date-time
+             * @description Timestamp of earliest photo in bucket
+             */
+            first: string;
+            /**
+             * Last
+             * Format: date-time
+             * @description Timestamp of latest photo in bucket
+             */
+            last: string;
+        };
+        /**
          * DeleteTagResponse
          * @description Response after deleting a tag completely
          */
@@ -1572,110 +1674,82 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
-         * ImageFileAddToPhotoRequest
-         * @description Request model for adding an ImageFile to an existing Photo
+         * ImageFileCreateSchema
+         * @description Schema for creating an ImageFile record.
          *
-         *     This is used when uploading a companion file (e.g., RAW file for existing JPEG)
-         *     or additional format of the same photo. The photo_hothash must be provided
-         *     to specify which existing Photo to add this ImageFile to.
-         *
-         *     NOTE: hotpreview and exif_dict are NOT included since the Photo
-         *     already exists with its visual representation and metadata. This is purely for
-         *     adding file variants.
+         *     Represents metadata about a source image file (JPEG, RAW, etc.)
+         *     that belongs to a Photo.
          */
-        ImageFileAddToPhotoRequest: {
+        ImageFileCreateSchema: {
             /**
              * Filename
-             * @description Filename with extension
+             * @description Original filename
              */
             filename: string;
-            /**
-             * Photo Hothash
-             * @description Hash of existing Photo to add this ImageFile to
-             */
-            photo_hothash: string;
             /**
              * File Size
              * @description File size in bytes
              */
-            file_size?: number | null;
+            file_size: number;
             /**
-             * Import Session Id
-             * @description Import session ID
+             * Imported Time
+             * @description When the file was imported
              */
-            import_session_id?: number | null;
+            imported_time?: string | null;
             /**
              * Imported Info
-             * @description Import context and original location
+             * @description Additional import metadata (source path, user, etc.)
              */
             imported_info?: {
                 [key: string]: unknown;
             } | null;
             /**
              * Local Storage Info
-             * @description Local storage info
+             * @description Local filesystem storage details
              */
             local_storage_info?: {
                 [key: string]: unknown;
             } | null;
             /**
              * Cloud Storage Info
-             * @description Cloud storage info
+             * @description Cloud storage details (S3, etc.)
              */
             cloud_storage_info?: {
                 [key: string]: unknown;
             } | null;
         };
         /**
-         * ImageFileNewPhotoRequest
-         * @description Request model for creating a new ImageFile that will create a new Photo
-         *
-         *     This is used when uploading an image that represents a new, unique photo.
-         *     The hotpreview is required and will be used to generate the Photo's hothash.
+         * ImageFileResponse
+         * @description Complete image response model
          */
-        ImageFileNewPhotoRequest: {
+        ImageFileResponse: {
+            /** Id */
+            id: number;
+            /**
+             * Photo Hothash
+             * @description Photo hothash - links to Photo
+             */
+            photo_hothash?: string | null;
             /**
              * Filename
-             * @description Filename with extension
+             * @description Filename with extension (e.g. IMG_1234.jpg)
              */
             filename: string;
-            /**
-             * Hotpreview
-             * @description Hotpreview image binary data or Base64 string (required for new Photo)
-             */
-            hotpreview: string;
             /**
              * File Size
              * @description File size in bytes
              */
             file_size?: number | null;
             /**
-             * Exif Dict
-             * @description Parsed EXIF metadata as JSON structure (extracted by frontend)
-             */
-            exif_dict?: {
-                [key: string]: unknown;
-            } | null;
-            /**
-             * Taken At
-             * @description When photo was taken (from EXIF)
-             */
-            taken_at?: string | null;
-            /**
-             * Gps Latitude
-             * @description GPS latitude (from EXIF)
-             */
-            gps_latitude?: number | null;
-            /**
-             * Gps Longitude
-             * @description GPS longitude (from EXIF)
-             */
-            gps_longitude?: number | null;
-            /**
              * Import Session Id
              * @description Import session ID
              */
             import_session_id?: number | null;
+            /**
+             * Imported Time
+             * @description When this file was imported
+             */
+            imported_time?: string | null;
             /**
              * Imported Info
              * @description Import context and original location
@@ -1685,18 +1759,39 @@ export interface components {
             } | null;
             /**
              * Local Storage Info
-             * @description Local storage info
+             * @description Local storage metadata
              */
             local_storage_info?: {
                 [key: string]: unknown;
             } | null;
             /**
              * Cloud Storage Info
-             * @description Cloud storage info
+             * @description Cloud storage metadata
              */
             cloud_storage_info?: {
                 [key: string]: unknown;
             } | null;
+            /**
+             * File Format
+             * @description File format computed from filename
+             */
+            file_format?: string | null;
+            /**
+             * File Path
+             * @description Full path computed by storage service
+             */
+            file_path?: string | null;
+            /**
+             * Original Filename
+             * @description Original filename from import session
+             */
+            original_filename?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             * @description When image was imported
+             */
+            created_at: string;
         };
         /**
          * ImageFileSummary
@@ -1717,50 +1812,6 @@ export interface components {
              * @description File size in bytes
              */
             file_size?: number | null;
-        };
-        /**
-         * ImageFileUploadResponse
-         * @description Response model for both new-photo and add-to-photo uploads
-         *     Contains the created ImageFile and related Photo information
-         */
-        ImageFileUploadResponse: {
-            /**
-             * Image File Id
-             * @description ID of created ImageFile
-             */
-            image_file_id: number;
-            /**
-             * Filename
-             * @description Filename of uploaded file
-             */
-            filename: string;
-            /**
-             * File Size
-             * @description File size in bytes
-             */
-            file_size?: number | null;
-            /**
-             * Photo Hothash
-             * @description Hash of associated Photo
-             */
-            photo_hothash: string;
-            /**
-             * Photo Created
-             * @description Whether a new Photo was created (true) or existing Photo was used (false)
-             */
-            photo_created: boolean;
-            /**
-             * Success
-             * @description Upload success status
-             * @default true
-             */
-            success: boolean;
-            /**
-             * Message
-             * @description Status message
-             * @default Upload successful
-             */
-            message: string;
         };
         /**
          * ImportSessionCreateRequest
@@ -2014,6 +2065,172 @@ export interface components {
             description?: string | null;
         };
         /**
+         * PhotoCreateRequest
+         * @description Request wrapper for creating Photo via API.
+         *
+         *     PhotoCreateSchema contains image data from imalink-core + frontend organization fields.
+         *     This wrapper adds tags (handled via separate PhotoTag relationship).
+         *
+         *     Backend will add user_id from JWT token (not in PhotoCreateSchema).
+         */
+        PhotoCreateRequest: {
+            photo_create_schema: components["schemas"]["PhotoCreateSchema"];
+            /**
+             * Tags
+             * @description Tag names to associate
+             */
+            tags?: string[];
+        };
+        /**
+         * PhotoCreateResponse
+         * @description Response after creating Photo.
+         *
+         *     Extends PhotoResponse with creation-specific fields.
+         */
+        PhotoCreateResponse: {
+            /** Id */
+            id: number;
+            /** Hothash */
+            hothash: string;
+            /** Width */
+            width: number;
+            /** Height */
+            height: number;
+            /** Rating */
+            rating: number;
+            /** Visibility */
+            visibility: string;
+            /** Taken At */
+            taken_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             * @description When photo was created in database
+             */
+            created_at: string;
+            /** User Id */
+            user_id: number;
+            /**
+             * Is Duplicate
+             * @description True if hothash already existed
+             * @default false
+             */
+            is_duplicate: boolean;
+        };
+        /**
+         * PhotoCreateSchema
+         * @description Schema for creating a Photo (generated by imalink-core, enhanced by frontend).
+         *
+         *     Created by imalink-core from image file(s), then frontend adds user organization fields.
+         *     Backend adds user_id from JWT token (NOT included in this schema).
+         *
+         *     Key principles:
+         *     - hothash is unique identifier (SHA256 of hotpreview)
+         *     - exif_dict contains ALL EXIF metadata (flexible JSON)
+         *     - Only taken_at, gps_latitude, gps_longitude copied to root for DB indexing
+         *     - image_file_list contains one or more source files (JPEG + RAW companions)
+         */
+        PhotoCreateSchema: {
+            /**
+             * Hothash
+             * @description SHA256 hash of hotpreview (unique ID)
+             */
+            hothash: string;
+            /**
+             * Hotpreview Base64
+             * @description Base64 encoded JPEG preview (~200px)
+             */
+            hotpreview_base64: string;
+            /**
+             * Exif Dict
+             * @description Complete EXIF data (camera_make, iso, etc. - flexible schema)
+             */
+            exif_dict?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Width
+             * @description Image width in pixels
+             */
+            width: number;
+            /**
+             * Height
+             * @description Image height in pixels
+             */
+            height: number;
+            /**
+             * Taken At
+             * @description When photo was taken (for timeline queries)
+             */
+            taken_at?: string | null;
+            /**
+             * Gps Latitude
+             * @description GPS latitude (for map queries)
+             */
+            gps_latitude?: number | null;
+            /**
+             * Gps Longitude
+             * @description GPS longitude (for map queries)
+             */
+            gps_longitude?: number | null;
+            /**
+             * Rating
+             * @description Star rating (0-5)
+             * @default 0
+             */
+            rating: number;
+            /**
+             * Category
+             * @description Category type (photo, screenshot, video, etc.)
+             */
+            category?: string | null;
+            /**
+             * Visibility
+             * @description Visibility level (private, space, authenticated, public)
+             * @default private
+             */
+            visibility: string;
+            /**
+             * Import Session Id
+             * @description Import batch this photo belongs to
+             */
+            import_session_id?: number | null;
+            /**
+             * Author Id
+             * @description Photographer/creator ID
+             */
+            author_id?: number | null;
+            /**
+             * Stack Id
+             * @description Photo stack ID (for related images)
+             */
+            stack_id?: number | null;
+            /**
+             * Coldpreview Base64
+             * @description Base64 encoded larger JPEG preview (optional)
+             */
+            coldpreview_base64?: string | null;
+            /**
+             * Timeloc Correction
+             * @description Time/location corrections (timezone fix, GPS override, etc.)
+             */
+            timeloc_correction?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * View Correction
+             * @description Visual adjustments (rotation, crop hints for frontend)
+             */
+            view_correction?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Image File List
+             * @description List of source image files (JPEG + RAW companions)
+             */
+            image_file_list?: components["schemas"]["ImageFileCreateSchema"][];
+        };
+        /**
          * PhotoManagementResponse
          * @description Response for photo add/remove/reorder operations
          */
@@ -2119,6 +2336,17 @@ export interface components {
              */
             rating: number;
             /**
+             * Category
+             * @description User-defined category (e.g., 'hobby', 'work', 'family')
+             */
+            category?: string | null;
+            /**
+             * Visibility
+             * @description Photo visibility: 'private', 'space', 'authenticated', or 'public'
+             * @default private
+             */
+            visibility: string;
+            /**
              * Created At
              * Format: date-time
              * @description When photo was imported
@@ -2218,6 +2446,11 @@ export interface components {
              */
             rating_max?: number | null;
             /**
+             * Category
+             * @description Filter by category (exact match)
+             */
+            category?: string | null;
+            /**
              * Taken After
              * @description Photos taken after this date (inclusive)
              */
@@ -2279,15 +2512,15 @@ export interface components {
          */
         PhotoStackCreateRequest: {
             /**
-             * Cover Photo Hothash
-             * @description Photo hash to use as cover image
-             */
-            cover_photo_hothash?: string | null;
-            /**
              * Stack Type
-             * @description Type of stack: panorama, burst, animation, etc.
+             * @description Type of stack: burst, panorama, timelapse, etc.
              */
             stack_type?: string | null;
+            /**
+             * Title
+             * @description Optional user-friendly name for the stack
+             */
+            title?: string | null;
         };
         /**
          * PhotoStackDetail
@@ -2305,10 +2538,10 @@ export interface components {
              */
             stack_type?: string | null;
             /**
-             * Cover Photo Hothash
-             * @description Hash of the cover photo
+             * Title
+             * @description User-friendly name for the stack
              */
-            cover_photo_hothash?: string | null;
+            title?: string | null;
             /**
              * Photo Hothashes
              * @description List of photo hashes in the stack
@@ -2379,10 +2612,10 @@ export interface components {
              */
             stack_type?: string | null;
             /**
-             * Cover Photo Hothash
-             * @description Hash of the cover photo
+             * Title
+             * @description User-friendly name for the stack
              */
-            cover_photo_hothash?: string | null;
+            title?: string | null;
             /**
              * Photo Count
              * @description Number of photos in this stack
@@ -2407,15 +2640,15 @@ export interface components {
          */
         PhotoStackUpdateRequest: {
             /**
-             * Cover Photo Hothash
-             * @description Updated cover photo
-             */
-            cover_photo_hothash?: string | null;
-            /**
              * Stack Type
              * @description Updated stack type
              */
             stack_type?: string | null;
+            /**
+             * Title
+             * @description Updated title
+             */
+            title?: string | null;
         };
         /**
          * PhotoTextDocumentCreate
@@ -2449,6 +2682,12 @@ export interface components {
              * @default false
              */
             is_published: boolean;
+            /**
+             * Visibility
+             * @description Document visibility (optional, defaults to 'private' for backwards compatibility)
+             * @default private
+             */
+            visibility: string | null;
         };
         /**
          * PhotoTextDocumentListResponse
@@ -2534,6 +2773,12 @@ export interface components {
              */
             published_at?: string | null;
             /**
+             * Visibility
+             * @description Document visibility: 'private', 'space', 'authenticated', or 'public'
+             * @default private
+             */
+            visibility: string;
+            /**
              * Version
              * @description Document version
              */
@@ -2597,6 +2842,12 @@ export interface components {
              */
             published_at?: string | null;
             /**
+             * Visibility
+             * @description Document visibility: 'private', 'space', 'authenticated', or 'public'
+             * @default private
+             */
+            visibility: string;
+            /**
              * Created At
              * Format: date-time
              * @description Creation timestamp
@@ -2638,6 +2889,11 @@ export interface components {
              * @description Publication status
              */
             is_published?: boolean | null;
+            /**
+             * Visibility
+             * @description Document visibility (optional, backwards compatible)
+             */
+            visibility?: string | null;
         };
         /**
          * PhotoUpdateRequest
@@ -2650,10 +2906,20 @@ export interface components {
              */
             rating?: number | null;
             /**
+             * Category
+             * @description User-defined category
+             */
+            category?: string | null;
+            /**
              * Author Id
              * @description Author/photographer ID
              */
             author_id?: number | null;
+            /**
+             * Visibility
+             * @description Photo visibility (optional, backwards compatible)
+             */
+            visibility?: string | null;
         };
         /**
          * RelativeCrop
@@ -3012,6 +3278,144 @@ export interface components {
              * @description User explanation for correction
              */
             correction_reason?: string | null;
+        };
+        /**
+         * TimelineBucket
+         * @description A time bucket with aggregated photo data.
+         * @example {
+         *       "count": 45,
+         *       "date_range": {
+         *         "first": "2024-06-01T08:00:00Z",
+         *         "last": "2024-06-30T22:45:00Z"
+         *       },
+         *       "month": 6,
+         *       "preview_hothash": "abc123def456...",
+         *       "preview_url": "/api/v1/photos/abc123def456.../hotpreview",
+         *       "year": 2024
+         *     }
+         */
+        TimelineBucket: {
+            /**
+             * Year
+             * @description Year (1900-2100)
+             */
+            year: number;
+            /**
+             * Month
+             * @description Month (1-12), present for month/day/hour granularity
+             */
+            month?: number | null;
+            /**
+             * Day
+             * @description Day of month (1-31), present for day/hour granularity
+             */
+            day?: number | null;
+            /**
+             * Hour
+             * @description Hour (0-23), present for hour granularity
+             */
+            hour?: number | null;
+            /**
+             * Count
+             * @description Number of photos in this bucket
+             */
+            count: number;
+            /**
+             * Preview Hothash
+             * @description HotHash of representative photo
+             */
+            preview_hothash: string;
+            /**
+             * Preview Url
+             * @description URL to hotpreview of representative photo
+             */
+            preview_url: string;
+            /** @description Date range of photos in bucket */
+            date_range: components["schemas"]["DateRange"];
+        };
+        /**
+         * TimelineMeta
+         * @description Metadata for timeline response.
+         */
+        TimelineMeta: {
+            /**
+             * Total Years
+             * @description Total years with photos
+             */
+            total_years?: number | null;
+            /**
+             * Total Months
+             * @description Total months with photos (when filtered by year)
+             */
+            total_months?: number | null;
+            /**
+             * Total Days
+             * @description Total days with photos (when filtered by month)
+             */
+            total_days?: number | null;
+            /**
+             * Total Hours
+             * @description Total hours with photos (when filtered by day)
+             */
+            total_hours?: number | null;
+            /**
+             * Total Photos
+             * @description Total photos in current view
+             */
+            total_photos: number;
+            /**
+             * Granularity
+             * @description Time bucket granularity
+             * @enum {string}
+             */
+            granularity: "year" | "month" | "day" | "hour";
+            /**
+             * Year
+             * @description Filtered year
+             */
+            year?: number | null;
+            /**
+             * Month
+             * @description Filtered month
+             */
+            month?: number | null;
+            /**
+             * Day
+             * @description Filtered day
+             */
+            day?: number | null;
+        };
+        /**
+         * TimelineResponse
+         * @description Timeline API response.
+         * @example {
+         *       "data": [
+         *         {
+         *           "count": 1247,
+         *           "date_range": {
+         *             "first": "2024-01-05T08:23:12Z",
+         *             "last": "2024-12-28T19:45:00Z"
+         *           },
+         *           "preview_hothash": "abc123...",
+         *           "preview_url": "/api/v1/photos/abc123.../hotpreview",
+         *           "year": 2024
+         *         }
+         *       ],
+         *       "meta": {
+         *         "granularity": "year",
+         *         "total_photos": 4521,
+         *         "total_years": 5
+         *       }
+         *     }
+         */
+        TimelineResponse: {
+            /**
+             * Data
+             * @description Array of timeline buckets
+             */
+            data: components["schemas"]["TimelineBucket"][];
+            /** @description Timeline metadata */
+            meta: components["schemas"]["TimelineMeta"];
         };
         /**
          * UserChangePassword
@@ -3971,40 +4375,7 @@ export interface operations {
             };
         };
     };
-    create_photo_with_file_api_v1_photos_new_photo_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ImageFileNewPhotoRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImageFileUploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_file_to_photo_api_v1_photos__hothash__files_post: {
+    get_photo_files_api_v1_photos__hothash__files_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -4013,19 +4384,15 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ImageFileAddToPhotoRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImageFileUploadResponse"];
+                    "application/json": components["schemas"]["ImageFileResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -4424,6 +4791,83 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PhotoStackSummary"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_photo_api_v1_photos_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoCreateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_image_api_v1_photos_register_image_post: {
+        parameters: {
+            query?: {
+                /** @description Import session ID (uses protected 'Quick Add' if not provided) */
+                import_session_id?: number | null;
+                /** @description Star rating 0-5 */
+                rating?: number;
+                /** @description Visibility level */
+                visibility?: string;
+                /** @description Author ID */
+                author_id?: number | null;
+                /** @description Size for coldpreview (e.g., 2560) */
+                coldpreview_size?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_register_image_api_v1_photos_register_image_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoCreateResponse"];
                 };
             };
             /** @description Validation Error */
@@ -5132,6 +5576,44 @@ export interface operations {
             };
         };
     };
+    get_timeline_api_v1_timeline__get: {
+        parameters: {
+            query?: {
+                /** @description Time bucket granularity (year/month/day/hour) */
+                granularity?: "year" | "month" | "day" | "hour";
+                /** @description Filter to specific year (required for month/day/hour) */
+                year?: number | null;
+                /** @description Filter to specific month (required for day/hour, requires year) */
+                month?: number | null;
+                /** @description Filter to specific day (required for hour, requires year and month) */
+                day?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimelineResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_photo_stacks_api_v1_photo_stacks__get: {
         parameters: {
             query?: {
@@ -5370,16 +5852,18 @@ export interface operations {
                 document_type?: string | null;
                 /** @description Filter by publication status */
                 is_published?: boolean | null;
-                /** @description Page size */
+                /** @description Number of documents per page */
                 limit?: number;
-                /** @description Page offset */
+                /** @description Number of documents to skip */
                 offset?: number;
-                /** @description Sort field (created_at/updated_at/title) */
+                /** @description Sort field (created_at, updated_at, title) */
                 sort_by?: string;
-                /** @description Sort order (asc/desc) */
+                /** @description Sort order (asc, desc) */
                 sort_order?: string;
             };
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5441,7 +5925,9 @@ export interface operations {
     get_document_api_v1_phototext__document_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 document_id: number;
             };

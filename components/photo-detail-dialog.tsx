@@ -232,7 +232,8 @@ export function PhotoDetailDialog({
     }
   };
 
-  const primaryFile = photo.image_files?.[0];
+  // Support both old (image_files) and new (files) array names, and primary_filename
+  const primaryFile = photo.files?.[0] || photo.image_files?.[0];
   const displayName = photo.primary_filename || primaryFile?.filename || 'Unknown';
 
   return (

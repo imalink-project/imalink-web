@@ -46,7 +46,9 @@ export function PhotoCard({ photo, onClick }: PhotoCardProps) {
     );
   };
 
-  const primaryFile = photo.image_files?.[0];
+  // Support both old (image_files) and new (files) array names, and primary_filename
+  const primaryFile = photo.files?.[0] || photo.image_files?.[0];
+  const displayName = photo.primary_filename || primaryFile?.filename || 'Unknown';
 
   return (
     <Card
@@ -57,7 +59,7 @@ export function PhotoCard({ photo, onClick }: PhotoCardProps) {
         {!imageError ? (
           <Image
             src={imageUrl}
-            alt={primaryFile?.filename || 'Photo'}
+            alt={displayName}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className={`object-cover transition-opacity duration-300 ${
@@ -85,7 +87,7 @@ export function PhotoCard({ photo, onClick }: PhotoCardProps) {
 
       <div className="p-3 space-y-2">
         <p className="truncate text-sm font-medium">
-          {photo.primary_filename || primaryFile?.filename || 'Unknown'}
+          {displayName}
         </p>
 
         <div className="flex items-center justify-between text-xs text-zinc-500">
