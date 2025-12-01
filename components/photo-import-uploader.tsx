@@ -31,7 +31,7 @@ interface PhotoCreateSchema {
   }>;
   rating: number;
   visibility: string;
-  input_channel_id?: number | null;
+  import_session_id?: number | null; // Backend DB column name (not yet renamed to input_channel_id)
   author_id?: number | null;
   category?: string | null;
   stack_id?: number | null;
