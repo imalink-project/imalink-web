@@ -130,7 +130,7 @@ export default function InputChannelDetailPage() {
         </div>
       ) : (
         <PhotoGrid
-          searchParams={{ import_session_id: channelId }}
+          searchParams={{ input_channel_id: channelId }}
           onPhotoClick={handlePhotoClick}
         />
       )}

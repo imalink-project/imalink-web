@@ -204,7 +204,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/import-sessions/": {
+    "/api/v1/input-channels/": {
         parameters: {
             query?: never;
             header?: never;
@@ -212,25 +212,25 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List Import Sessions
-         * @description List all import sessions with pagination
+         * List Input Channels
+         * @description List all input channels with pagination
          */
-        get: operations["list_import_sessions_api_v1_import_sessions__get"];
+        get: operations["list_input_channels_api_v1_input_channels__get"];
         put?: never;
         /**
-         * Create Import Session
-         * @description Create a new import session (user's reference metadata).
+         * Create Input Channel
+         * @description Create a new input channel (user's reference metadata).
          *
          *     Client has already imported the images - this just records metadata.
          */
-        post: operations["create_import_session_api_v1_import_sessions__post"];
+        post: operations["create_input_channel_api_v1_input_channels__post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/import-sessions/{import_id}": {
+    "/api/v1/input-channels/{channel_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -238,27 +238,27 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Import Session
-         * @description Get a specific import session by ID
+         * Get Input Channel
+         * @description Get a specific input channel by ID
          */
-        get: operations["get_import_session_api_v1_import_sessions__import_id__get"];
+        get: operations["get_input_channel_api_v1_input_channels__channel_id__get"];
         put?: never;
         post?: never;
         /**
-         * Delete Import Session
-         * @description Delete an import session.
+         * Delete Input Channel
+         * @description Delete an input channel.
          *
-         *     WARNING: This will also delete all images associated with this import session
+         *     WARNING: This will also delete all images associated with this input channel
          *     due to cascade delete. Use with caution.
          */
-        delete: operations["delete_import_session_api_v1_import_sessions__import_id__delete"];
+        delete: operations["delete_input_channel_api_v1_input_channels__channel_id__delete"];
         options?: never;
         head?: never;
         /**
-         * Update Import Session
-         * @description Update import session metadata
+         * Update Input Channel
+         * @description Update input channel metadata
          */
-        patch: operations["update_import_session_api_v1_import_sessions__import_id__patch"];
+        patch: operations["update_input_channel_api_v1_input_channels__channel_id__patch"];
         trace?: never;
     };
     "/api/v1/authors/": {
@@ -769,7 +769,7 @@ export interface paths {
          *
          *     Args:
          *         file: Image file (JPEG, PNG, etc.)
-         *         import_session_id: Optional import session (defaults to protected 'Quick Add')
+         *         input_channel_id: Optional input channel (defaults to protected 'Quick Channel')
          *         rating: Star rating 0-5
          *         visibility: Visibility level (private, space, authenticated, public)
          *         author_id: Optional photographer/author
@@ -1741,10 +1741,10 @@ export interface components {
              */
             file_size?: number | null;
             /**
-             * Import Session Id
-             * @description Import session ID
+             * Input Channel Id
+             * @description Input channel ID
              */
-            import_session_id?: number | null;
+            input_channel_id?: number | null;
             /**
              * Imported Time
              * @description When this file was imported
@@ -1814,44 +1814,44 @@ export interface components {
             file_size?: number | null;
         };
         /**
-         * ImportSessionCreateRequest
-         * @description Request to create an import session (user's reference metadata)
+         * InputChannelCreateRequest
+         * @description Request to create an input channel (user's reference metadata)
          */
-        ImportSessionCreateRequest: {
+        InputChannelCreateRequest: {
             /**
              * Title
-             * @description User's title for this import (e.g., 'Italy Summer 2024')
+             * @description User's title for this channel (e.g., 'Italy Summer 2024')
              */
             title?: string | null;
             /**
              * Description
-             * @description User's notes or comments about this import
+             * @description User's notes or comments about this channel
              */
             description?: string | null;
             /**
              * Default Author Id
-             * @description Default photographer for this batch of photos
+             * @description Default photographer for this channel
              */
             default_author_id?: number | null;
         };
         /**
-         * ImportSessionListResponse
-         * @description Response for import session list
+         * InputChannelListResponse
+         * @description Response for input channel list
          */
-        ImportSessionListResponse: {
-            /** Sessions */
-            sessions: components["schemas"]["ImportSessionResponse"][];
+        InputChannelListResponse: {
+            /** Channels */
+            channels: components["schemas"]["InputChannelResponse"][];
             /**
              * Total
-             * @description Total number of sessions
+             * @description Total number of channels
              */
             total: number;
         };
         /**
-         * ImportSessionResponse
-         * @description Import session metadata response
+         * InputChannelResponse
+         * @description Input channel metadata response
          */
-        ImportSessionResponse: {
+        InputChannelResponse: {
             /** Id */
             id: number;
             /**
@@ -1867,16 +1867,16 @@ export interface components {
             default_author_id?: number | null;
             /**
              * Images Count
-             * @description Number of images in this import session
+             * @description Number of images in this input channel
              * @default 0
              */
             images_count: number;
         };
         /**
-         * ImportSessionUpdateRequest
-         * @description Request to update import session metadata
+         * InputChannelUpdateRequest
+         * @description Request to update input channel metadata
          */
-        ImportSessionUpdateRequest: {
+        InputChannelUpdateRequest: {
             /**
              * Title
              * @description Updated title
@@ -2191,10 +2191,10 @@ export interface components {
              */
             visibility: string;
             /**
-             * Import Session Id
+             * Input Channel Id
              * @description Import batch this photo belongs to
              */
-            import_session_id?: number | null;
+            input_channel_id?: number | null;
             /**
              * Author Id
              * @description Photographer/creator ID
@@ -2366,10 +2366,10 @@ export interface components {
              */
             author_id?: number | null;
             /**
-             * Import Session Id
-             * @description Import session that created this photo
+             * Input Channel Id
+             * @description Input channel that created this photo
              */
-            import_session_id?: number | null;
+            input_channel_id?: number | null;
             /**
              * First Imported
              * @description Earliest file import time
@@ -2426,10 +2426,10 @@ export interface components {
              */
             author_id?: number | null;
             /**
-             * Import Session Id
-             * @description Filter by import session ID (exact match)
+             * Input Channel Id
+             * @description Filter by input channel ID (exact match)
              */
-            import_session_id?: number | null;
+            input_channel_id?: number | null;
             /**
              * Tag Ids
              * @description Filter by tag IDs (photos with ANY of these tags)
@@ -3838,7 +3838,7 @@ export interface operations {
             };
         };
     };
-    list_import_sessions_api_v1_import_sessions__get: {
+    list_input_channels_api_v1_input_channels__get: {
         parameters: {
             query?: {
                 limit?: number;
@@ -3856,7 +3856,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportSessionListResponse"];
+                    "application/json": components["schemas"]["InputChannelListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3870,7 +3870,7 @@ export interface operations {
             };
         };
     };
-    create_import_session_api_v1_import_sessions__post: {
+    create_input_channel_api_v1_input_channels__post: {
         parameters: {
             query?: never;
             header?: never;
@@ -3879,7 +3879,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportSessionCreateRequest"];
+                "application/json": components["schemas"]["InputChannelCreateRequest"];
             };
         };
         responses: {
@@ -3889,7 +3889,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportSessionResponse"];
+                    "application/json": components["schemas"]["InputChannelResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3903,12 +3903,12 @@ export interface operations {
             };
         };
     };
-    get_import_session_api_v1_import_sessions__import_id__get: {
+    get_input_channel_api_v1_input_channels__channel_id__get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                import_id: number;
+                channel_id: number;
             };
             cookie?: never;
         };
@@ -3920,7 +3920,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportSessionResponse"];
+                    "application/json": components["schemas"]["InputChannelResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3934,12 +3934,12 @@ export interface operations {
             };
         };
     };
-    delete_import_session_api_v1_import_sessions__import_id__delete: {
+    delete_input_channel_api_v1_input_channels__channel_id__delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                import_id: number;
+                channel_id: number;
             };
             cookie?: never;
         };
@@ -3965,18 +3965,18 @@ export interface operations {
             };
         };
     };
-    update_import_session_api_v1_import_sessions__import_id__patch: {
+    update_input_channel_api_v1_input_channels__channel_id__patch: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                import_id: number;
+                channel_id: number;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportSessionUpdateRequest"];
+                "application/json": components["schemas"]["InputChannelUpdateRequest"];
             };
         };
         responses: {
@@ -3986,7 +3986,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportSessionResponse"];
+                    "application/json": components["schemas"]["InputChannelResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4840,8 +4840,8 @@ export interface operations {
     register_image_api_v1_photos_register_image_post: {
         parameters: {
             query?: {
-                /** @description Import session ID (uses protected 'Quick Add' if not provided) */
-                import_session_id?: number | null;
+                /** @description Input channel ID (uses protected 'Quick Channel' if not provided) */
+                input_channel_id?: number | null;
                 /** @description Star rating 0-5 */
                 rating?: number;
                 /** @description Visibility level */

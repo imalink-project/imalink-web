@@ -52,10 +52,10 @@ export type PhotoStackSummary = components['schemas']['PhotoStackSummary'];
 export type Author = components['schemas']['AuthorResponse'];
 export type AuthorSummary = components['schemas']['AuthorSummary'];
 
-// Import Sessions -> Input Channels (using backend schema names)
-export type InputChannel = components['schemas']['ImportSessionResponse'];
-export type InputChannelCreate = components['schemas']['ImportSessionCreateRequest'];
-export type InputChannelUpdate = components['schemas']['ImportSessionUpdateRequest'];
+// Import Sessions -> Input Channels
+export type InputChannel = components['schemas']['InputChannelResponse'];
+export type InputChannelCreate = components['schemas']['InputChannelCreateRequest'];
+export type InputChannelUpdate = components['schemas']['InputChannelUpdateRequest'];
 
 // PhotoText Documents
 export type PhotoTextDocument = components['schemas']['PhotoTextDocumentResponse'];
