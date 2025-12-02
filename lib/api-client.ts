@@ -759,7 +759,7 @@ class ApiClient {
         const response = await fetch(`${this.baseUrl}/photos/${hothash}/event`, {
           method: 'PUT',
           headers: this.getHeaders(),
-          body: JSON.stringify({ event_id: numericEventId }),
+          body: JSON.stringify(numericEventId), // Send just the integer, not an object
         });
         return this.handleResponse<Photo>(response);
       })
