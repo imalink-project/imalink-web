@@ -3,21 +3,43 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import type { PhotoWithTags } from '@/lib/types';
+import type { PhotoDisplaySize } from '@/lib/photo-store';
+import { PHOTO_DISPLAY_CONFIGS } from '@/lib/photo-store';
 import { apiClient } from '@/lib/api-client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface PhotoCardProps {
   photo: PhotoWithTags;
   onClick?: (photo: PhotoWithTags) => void;
+  selectionMode?: boolean;
+  isSelected?: boolean;
+  onSelect?: (hothash: string) => void;
+  displaySize?: PhotoDisplaySize;
 }
 
-export function PhotoCard({ photo, onClick }: PhotoCardProps) {
+export function PhotoCard({ 
+  photo, 
+  onClick,
+  selectionMode = false,
+  isSelected = false,
+  onSelect,
+  displaySize = 'medium',
+}: PhotoCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   // Use hot preview for initial load
   const imageUrl = apiClient.getHotPreviewUrl(photo.hothash);
+  
+  // Get display configuration
+  const config = PHOTO_DISPLAY_CONFIGS[displaySize];
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return null;
@@ -50,12 +72,22 @@ export function PhotoCard({ photo, onClick }: PhotoCardProps) {
   const primaryFile = photo.files?.[0] || photo.image_files?.[0];
   const displayName = photo.primary_filename || primaryFile?.filename || 'Unknown';
 
+  const handleClick = () => {
+    if (selectionMode && onSelect) {
+      onSelect(photo.hothash);
+    } else {
+      onClick?.(photo);
+    }
+  };
+
   return (
     <Card
-      className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg"
-      onClick={() => onClick?.(photo)}
+      className={`group cursor-pointer overflow-hidden transition-all hover:shadow-lg ${
+        isSelected ? 'ring-2 ring-primary ring-offset-2' : ''
+      }`}
+      onClick={handleClick}
     >
-      <div className="relative aspect-square bg-zinc-100 dark:bg-zinc-800">
+      <div className={`relative ${config.cardHeight} bg-zinc-100 dark:bg-zinc-800`}>
         {!imageError ? (
           <Image
             src={imageUrl}
@@ -77,49 +109,99 @@ export function PhotoCard({ photo, onClick }: PhotoCardProps) {
         {/* Overlay on hover */}
         <div className="absolute inset-0 bg-black/0 transition-all group-hover:bg-black/20" />
 
+        {/* Selection checkbox */}
+        {selectionMode && (
+          <div className="absolute top-2 left-2 z-10">
+            <div className={`h-6 w-6 rounded-md border-2 flex items-center justify-center ${
+              isSelected 
+                ? 'bg-primary border-primary' 
+                : 'bg-white/80 border-white backdrop-blur-sm'
+            }`}>
+              {isSelected && (
+                <svg className="h-4 w-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Rating overlay */}
-        {photo.rating && (
+        {photo.rating && !selectionMode && (
           <div className="absolute top-2 right-2 rounded-md bg-black/50 px-2 py-1 backdrop-blur-sm">
             {renderStars(photo.rating)}
           </div>
         )}
       </div>
 
-      <div className="p-3 space-y-2">
-        <p className="truncate text-sm font-medium">
-          {displayName}
-        </p>
-
-        <div className="flex items-center justify-between text-xs text-zinc-500">
-          <span>{formatDate(photo.taken_at || photo.created_at)}</span>
-          <span>
-            {photo.width} × {photo.height}
-          </span>
-        </div>
-
-        {/* Tags */}
-        {photo.tags && photo.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {photo.tags.slice(0, 3).map((tag) => (
-              <Badge key={tag.id} variant="secondary" className="text-xs">
-                {tag.name}
-              </Badge>
-            ))}
-            {photo.tags.length > 3 && (
-              <Badge variant="secondary" className="text-xs">
-                +{photo.tags.length - 3}
-              </Badge>
-            )}
-          </div>
-        )}
-
-        {/* Location */}
-        {(photo.gps_latitude || photo.gps_longitude) && (
-          <p className="truncate text-xs text-zinc-500">
-            📍 {photo.gps_latitude?.toFixed(4)}, {photo.gps_longitude?.toFixed(4)}
+      {config.showMetadata && (
+        <div className="p-3 space-y-2">
+          <p className="truncate text-sm font-medium">
+            {displayName}
           </p>
-        )}
-      </div>
+
+          {config.showDate && (
+            <div className="flex items-center justify-between text-xs text-zinc-500">
+              <span>{formatDate(photo.taken_at || photo.created_at)}</span>
+              <span>
+                {photo.width} × {photo.height}
+              </span>
+            </div>
+          )}
+
+          {/* Tags */}
+          {config.showTags && photo.tags && photo.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {photo.tags.slice(0, 3).map((tag) => (
+                <Badge key={tag.id} variant="secondary" className="text-xs">
+                  {tag.name}
+                </Badge>
+              ))}
+              {photo.tags.length > 3 && (
+                <Badge variant="secondary" className="text-xs">
+                  +{photo.tags.length - 3}
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Event badge (one-to-many: max ONE event) */}
+          {config.showTags && photo.event && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs border-blue-500 text-blue-700 dark:text-blue-400 cursor-help"
+                  >
+                    📅 {photo.event.name}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="text-xs">
+                    <p className="font-semibold">{photo.event.name}</p>
+                    {photo.event.description && (
+                      <p className="text-muted-foreground mt-1">{photo.event.description}</p>
+                    )}
+                    {photo.event.start_date && (
+                      <p className="text-muted-foreground mt-1">
+                        {new Date(photo.event.start_date).toLocaleDateString('nb-NO')}
+                      </p>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
+          {/* Location */}
+          {config.showTags && (photo.gps_latitude || photo.gps_longitude) && (
+            <p className="truncate text-xs text-zinc-500">
+              📍 {photo.gps_latitude?.toFixed(4)}, {photo.gps_longitude?.toFixed(4)}
+            </p>
+          )}
+        </div>
+      )}
     </Card>
   );
 }

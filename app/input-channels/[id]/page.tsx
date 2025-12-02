@@ -7,8 +7,11 @@ import type { InputChannel, PhotoWithTags } from '@/lib/types';
 import { EditInputChannelDialog } from '@/components/edit-input-channel-dialog';
 import { PhotoGrid } from '@/components/photo-grid';
 import { PhotoDetailDialog } from '@/components/photo-detail-dialog';
+import { AddToEventDialog } from '@/components/add-to-event-dialog';
+import { AddToCollectionDialog } from '@/components/add-to-collection-dialog';
+import { CreateEventDialog } from '@/components/create-event-dialog';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Calendar, Image as ImageIcon, Pencil } from 'lucide-react';
+import { ArrowLeft, Calendar, Image as ImageIcon, Pencil, CheckSquare, FolderPlus, Tag, Plus } from 'lucide-react';
 
 export default function InputChannelDetailPage() {
   const params = useParams();
@@ -21,6 +24,13 @@ export default function InputChannelDetailPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoWithTags | null>(null);
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
+  
+  // Selection mode for bulk operations
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
+  const [addToEventDialogOpen, setAddToEventDialogOpen] = useState(false);
+  const [addToCollectionDialogOpen, setAddToCollectionDialogOpen] = useState(false);
+  const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
 
   useEffect(() => {
     loadChannel();
@@ -46,13 +56,73 @@ export default function InputChannelDetailPage() {
   };
 
   const handlePhotoClick = (photo: PhotoWithTags) => {
-    setSelectedPhoto(photo);
-    setPhotoDialogOpen(true);
+    if (!selectionMode) {
+      setSelectedPhoto(photo);
+      setPhotoDialogOpen(true);
+    }
+  };
+
+  const handlePhotoSelect = (hothash: string) => {
+    setSelectedPhotos(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(hothash)) {
+        newSet.delete(hothash);
+      } else {
+        newSet.add(hothash);
+      }
+      return newSet;
+    });
+  };
+
+  const handleToggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedPhotos(new Set());
+  };
+
+  const handleSelectAll = async () => {
+    try {
+      // Load all photos for this channel
+      const response = await apiClient.getPhotos({
+        input_channel_id: channelId,
+        limit: 1000, // Get all photos
+      });
+      const allHothashes = new Set(response.data.map(p => p.hothash));
+      setSelectedPhotos(allHothashes);
+    } catch (err) {
+      console.error('Failed to select all:', err);
+    }
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedPhotos(new Set());
   };
 
   const handlePhotoUpdated = (updatedPhoto: PhotoWithTags) => {
     // Trigger PhotoGrid refresh by updating channel
     loadChannel();
+  };
+
+  const handlePhotosAddedToEvent = () => {
+    loadChannel();
+    setSelectedPhotos(new Set());
+    setSelectionMode(false);
+  };
+
+  const handlePhotosAddedToCollection = () => {
+    loadChannel();
+    setSelectedPhotos(new Set());
+    setSelectionMode(false);
+  };
+
+  // Get photo IDs from selected hothashes
+  const getSelectedPhotoIds = async (): Promise<number[]> => {
+    const response = await apiClient.getPhotos({
+      input_channel_id: channelId,
+      limit: 1000,
+    });
+    return response.data
+      .filter(p => selectedPhotos.has(p.hothash))
+      .map(p => p.id);
   };
 
   const formatDate = (dateString: string) => {
@@ -116,12 +186,82 @@ export default function InputChannelDetailPage() {
             </div>
           </div>
 
-          <Button onClick={() => setEditDialogOpen(true)} variant="outline">
-            <Pencil className="h-4 w-4 mr-2" />
-            Rediger
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setEditDialogOpen(true)} variant="outline">
+              <Pencil className="h-4 w-4 mr-2" />
+              Rediger
+            </Button>
+            <Button 
+              onClick={handleToggleSelectionMode} 
+              variant={selectionMode ? "default" : "outline"}
+            >
+              <CheckSquare className="h-4 w-4 mr-2" />
+              {selectionMode ? 'Avslutt valg' : 'Velg bilder'}
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Selection toolbar */}
+      {selectionMode && (
+        <div className="mb-4 flex items-center justify-between rounded-lg border bg-card p-4">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium">
+              {selectedPhotos.size} {selectedPhotos.size === 1 ? 'bilde' : 'bilder'} valgt
+            </span>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleSelectAll}
+              >
+                Velg alle
+              </Button>
+              {selectedPhotos.size > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleDeselectAll}
+                >
+                  Fjern alle
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {selectedPhotos.size > 0 && (
+            <div className="flex gap-2">
+              <Button 
+                onClick={async () => {
+                  const photoIds = await getSelectedPhotoIds();
+                  setAddToEventDialogOpen(true);
+                }}
+                variant="default"
+              >
+                <Tag className="h-4 w-4 mr-2" />
+                Legg til i Event
+              </Button>
+              <Button 
+                onClick={async () => {
+                  const photoIds = await getSelectedPhotoIds();
+                  setAddToCollectionDialogOpen(true);
+                }}
+                variant="outline"
+              >
+                <FolderPlus className="h-4 w-4 mr-2" />
+                Legg til i Samling
+              </Button>
+              <Button 
+                onClick={() => setCreateEventDialogOpen(true)}
+                variant="outline"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Opprett ny Event
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Photos */}
       {loading ? (
@@ -132,6 +272,9 @@ export default function InputChannelDetailPage() {
         <PhotoGrid
           searchParams={{ input_channel_id: channelId }}
           onPhotoClick={handlePhotoClick}
+          selectionMode={selectionMode}
+          selectedPhotos={selectedPhotos}
+          onPhotoSelect={handlePhotoSelect}
         />
       )}
 
@@ -148,6 +291,33 @@ export default function InputChannelDetailPage() {
         open={photoDialogOpen}
         onOpenChange={setPhotoDialogOpen}
         onPhotoUpdated={handlePhotoUpdated}
+      />
+
+      {selectedPhotos.size > 0 && (
+        <>
+          <AddToEventDialog
+            open={addToEventDialogOpen}
+            onOpenChange={setAddToEventDialogOpen}
+            photoHothashes={Array.from(selectedPhotos)}
+            onPhotosAdded={handlePhotosAddedToEvent}
+          />
+
+          <AddToCollectionDialog
+            open={addToCollectionDialogOpen}
+            onOpenChange={setAddToCollectionDialogOpen}
+            photoHothashes={Array.from(selectedPhotos)}
+            onPhotosAdded={handlePhotosAddedToCollection}
+          />
+        </>
+      )}
+
+      <CreateEventDialog
+        open={createEventDialogOpen}
+        onOpenChange={setCreateEventDialogOpen}
+        onEventCreated={() => {
+          setCreateEventDialogOpen(false);
+          // Optionally auto-open add to event dialog
+        }}
       />
     </div>
   );

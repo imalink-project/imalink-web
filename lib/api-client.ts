@@ -22,6 +22,12 @@ import type {
   PhotoTextDocumentUpdate,
   Author,
   TimelineResponse,
+  Event,
+  EventWithPhotos,
+  EventTreeResponse,
+  EventCreate,
+  EventUpdate,
+  EventPhotosResponse,
 } from './types';
 
 const API_BASE_URL = 'https://api.trollfjell.com/api/v1';
@@ -659,6 +665,126 @@ class ApiClient {
     });
 
     return this.handleResponse<Photo>(response);
+  }
+
+  // Events API
+  async getEvents(parentId?: number | null): Promise<EventWithPhotos[]> {
+    const params = new URLSearchParams();
+    if (parentId !== undefined && parentId !== null) {
+      params.append('parent_id', parentId.toString());
+    }
+    
+    const response = await fetch(`${this.baseUrl}/events/?${params.toString()}`, {
+      headers: this.getHeaders(),
+    });
+
+    return this.handleResponse<EventWithPhotos[]>(response);
+  }
+
+  async getEventTree(rootId?: number | null): Promise<EventTreeResponse> {
+    const params = new URLSearchParams();
+    if (rootId !== undefined && rootId !== null) {
+      params.append('root_id', rootId.toString());
+    }
+    
+    const response = await fetch(`${this.baseUrl}/events/tree?${params.toString()}`, {
+      headers: this.getHeaders(),
+    });
+
+    return this.handleResponse<EventTreeResponse>(response);
+  }
+
+  async getEvent(id: number): Promise<Event> {
+    const response = await fetch(`${this.baseUrl}/events/${id}/`, {
+      headers: this.getHeaders(),
+    });
+
+    return this.handleResponse<Event>(response);
+  }
+
+  async createEvent(data: EventCreate): Promise<Event> {
+    const response = await fetch(`${this.baseUrl}/events/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    return this.handleResponse<Event>(response);
+  }
+
+  async updateEvent(id: number, data: EventUpdate): Promise<Event> {
+    const response = await fetch(`${this.baseUrl}/events/${id}/`, {
+      method: 'PUT',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    return this.handleResponse<Event>(response);
+  }
+
+  async moveEvent(id: number, newParentId: number | null): Promise<Event> {
+    const response = await fetch(`${this.baseUrl}/events/${id}/move`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ new_parent_id: newParentId }),
+    });
+
+    return this.handleResponse<Event>(response);
+  }
+
+  async deleteEvent(id: number): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/events/${id}/`, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+    });
+
+    if (response.status !== 204) {
+      await this.handleResponse<void>(response);
+    }
+  }
+
+  /**
+   * Set event_id for photos (one-to-many architecture)
+   * Replaces any existing event association
+   * 
+   * One-to-many: Each photo can belong to max ONE event
+   */
+  async setPhotosEvent(eventId: number, hothashes: string[]): Promise<EventPhotosResponse> {
+    const response = await fetch(`${this.baseUrl}/events/${eventId}/photos`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ hothashes }),
+    });
+
+    return this.handleResponse<EventPhotosResponse>(response);
+  }
+
+  /**
+   * Remove photos from event (set event_id to null)
+   * 
+   * One-to-many: Clear the event_id field for these photos
+   */
+  async removePhotosFromEvent(hothashes: string[]): Promise<EventPhotosResponse> {
+    const response = await fetch(`${this.baseUrl}/events/photos/remove`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ hothashes }),
+    });
+
+    return this.handleResponse<EventPhotosResponse>(response);
+  }
+
+  async getEventPhotos(eventId: number, includeDescendants: boolean = false): Promise<Photo[]> {
+    const params = new URLSearchParams();
+    if (includeDescendants) {
+      params.append('include_descendants', 'true');
+    }
+    
+    const response = await fetch(`${this.baseUrl}/events/${eventId}/photos?${params.toString()}`, {
+      headers: this.getHeaders(),
+    });
+
+    return this.handleResponse<Photo[]>(response);
   }
 }
 

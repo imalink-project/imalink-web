@@ -3,21 +3,38 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import type { PhotoWithTags, SearchParams } from '@/lib/types';
+import { usePhotoStore, PHOTO_DISPLAY_CONFIGS } from '@/lib/photo-store';
 import { PhotoCard } from './photo-card';
 import { Button } from './ui/button';
+import { Grid2X2, Grid3X3, LayoutGrid, List } from 'lucide-react';
 
 interface PhotoGridProps {
   searchParams?: SearchParams;
   onPhotoClick?: (photo: PhotoWithTags) => void;
+  selectionMode?: boolean;
+  selectedPhotos?: Set<string>;
+  onPhotoSelect?: (hothash: string) => void;
+  showViewSelector?: boolean;
 }
 
-export function PhotoGrid({ searchParams, onPhotoClick }: PhotoGridProps) {
+export function PhotoGrid({ 
+  searchParams, 
+  onPhotoClick,
+  selectionMode = false,
+  selectedPhotos = new Set(),
+  onPhotoSelect,
+  showViewSelector = true,
+}: PhotoGridProps) {
   const [photos, setPhotos] = useState<PhotoWithTags[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
   const limit = 30;
+  
+  // Use photo store for caching and display settings
+  const { addPhotos, displaySize, setDisplaySize } = usePhotoStore();
+  const config = PHOTO_DISPLAY_CONFIGS[displaySize];
 
   const loadPhotos = async (append: boolean = false) => {
     try {
@@ -35,6 +52,9 @@ export function PhotoGrid({ searchParams, onPhotoClick }: PhotoGridProps) {
 
       const items = (response.data || []) as PhotoWithTags[];
       const total = response.meta?.total || items.length;
+
+      // Add photos to central store
+      addPhotos(items);
 
       if (append) {
         setPhotos((prev) => [...prev, ...items]);
@@ -95,10 +115,52 @@ export function PhotoGrid({ searchParams, onPhotoClick }: PhotoGridProps) {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+    <div className="space-y-6">
+      {/* View selector */}
+      {showViewSelector && !selectionMode && (
+        <div className="flex justify-end gap-2">
+          <Button
+            variant={displaySize === 'small' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setDisplaySize('small')}
+          >
+            <Grid3X3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={displaySize === 'medium' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setDisplaySize('medium')}
+          >
+            <Grid2X2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={displaySize === 'large' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setDisplaySize('large')}
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={displaySize === 'detailed' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setDisplaySize('detailed')}
+          >
+            <List className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
+      <div className={`grid gap-4 ${config.gridCols}`}>
         {photos.map((photo) => (
-          <PhotoCard key={photo.hothash} photo={photo} onClick={onPhotoClick} />
+          <PhotoCard 
+            key={photo.hothash} 
+            photo={photo} 
+            onClick={onPhotoClick}
+            selectionMode={selectionMode}
+            isSelected={selectedPhotos.has(photo.hothash)}
+            onSelect={onPhotoSelect}
+            displaySize={displaySize}
+          />
         ))}
       </div>
 

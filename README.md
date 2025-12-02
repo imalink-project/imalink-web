@@ -36,10 +36,19 @@ Next.js frontend for ImaLink bildegalleri-system.
 
 ✅ **Collections** (Photo Collections)
 - Opprett og administrer samlinger
-- Legg til/fjern bilder i samlinger
+- Legg til/fjern bilder i samlinger (many-to-many)
 - Rediger samlingsnavn og beskrivelse
 - Slett samlinger
 - Vise cover photo og antall bilder
+
+✅ **Events** (Hierarkisk foto-organisering)
+- Opprett og administrer events med parent-child struktur
+- Sett event for bilder (one-to-many: ett foto = én event)
+- List og tree view for event-hierarki
+- Event detail med breadcrumbs og photo grid
+- Flytt events mellom parents
+- Event badges på photo cards
+- Event filter i søk (frontend klar, venter på backend)
 
 ✅ **PhotoText / Stories** (Artikler med bilder og tekst)
 - Block-basert editor (Heading, Paragraph, Image, List)
@@ -57,11 +66,13 @@ Next.js frontend for ImaLink bildegalleri-system.
 - Integration med ImagePicker
 - Modified tracking for unsaved changes
 
-⚠️ **Under Implementering** (API finnes, frontend mangler)
-- 🔖 Saved Searches (dynamiske smart album)
-- 📝 PhotoText publishing workflow
-- 📚 Album document type
-- 🎬 Slideshow document type
+⚠️ **Under Implementering / Venter på Backend**
+- 🔖 Saved Searches (API finnes, frontend mangler)
+- 📝 PhotoText publishing workflow (API finnes, frontend mangler)
+- 📚 Album document type (API finnes, frontend mangler)
+- 🎬 Slideshow document type (API finnes, frontend mangler)
+- 🎯 Event badges på photos (frontend klar, backend må legge til `event_id` + `event` i PhotoResponse)
+- 🔍 Event filter i search (frontend klar, backend må legge til `event_id` i PhotoSearchRequest)
 
 ## Teknologier
 
@@ -77,18 +88,32 @@ Next.js frontend for ImaLink bildegalleri-system.
 app/
   layout.tsx               # Root layout med AuthProvider
   page.tsx                 # Hovedside med photo grid
+  events/
+    page.tsx               # Events list (list/tree views)
+    [id]/page.tsx          # Event detail med photos og child events
+  collections/
+    page.tsx               # Collections list
+    [id]/page.tsx          # Collection detail
   stories/
     page.tsx               # Stories list med filter/sort
     new/page.tsx           # Story editor (new)
     [id]/page.tsx          # Story viewer
     [id]/edit/page.tsx     # Story editor (edit)
+  input-channels/
+    page.tsx               # Input channels list
+    [id]/page.tsx          # Input channel detail med bulk operations
 
 components/
   auth-form.tsx                          # Login/Register form
-  photo-card.tsx                         # Enkelt bildekort
+  photo-card.tsx                         # Enkelt bildekort med event badge
   photo-grid.tsx                         # Grid av bilder med paginering
   photo-detail-dialog.tsx                # Modal for redigering av metadata
-  search-filters.tsx                     # Søk og filterkomponenter
+  search-filters.tsx                     # Søk og filterkomponenter (inkl. event filter)
+  event-tree-view.tsx                    # Recursive tree view for events
+  event-breadcrumb.tsx                   # Hierarchical breadcrumb navigation
+  create-event-dialog.tsx                # Create new event dialog
+  add-to-event-dialog.tsx                # Set event for photos (one-to-many)
+  move-event-dialog.tsx                  # Move event to new parent
   phototext/
     ImagePicker.tsx                      # Visual image picker fra bildelister
     BildelisteViewer.tsx                 # Unified bildeliste viewer
@@ -143,8 +168,20 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - `GET /collections/{id}` - Get collection details
 - `PUT /collections/{id}` - Update collection
 - `DELETE /collections/{id}` - Delete collection
-- `POST /collections/{id}/photos` - Add photos to collection
+- `POST /collections/{id}/photos` - Add photos to collection (many-to-many)
 - `DELETE /collections/{id}/photos/{photo_id}` - Remove photo from collection
+
+**Events:**
+- `GET /api/v1/events` - List root events (or children with ?parent_id=X)
+- `GET /api/v1/events/tree` - Get hierarchical tree
+- `POST /api/v1/events` - Create new event
+- `GET /api/v1/events/{id}` - Get event details
+- `PUT /api/v1/events/{id}` - Update event
+- `DELETE /api/v1/events/{id}` - Delete event (children become roots)
+- `POST /api/v1/events/{id}/move` - Move event to new parent
+- `POST /api/v1/events/{id}/photos` - Set event_id for photos (one-to-many)
+- `GET /api/v1/events/{id}/photos` - Get photos in event
+- `POST /api/v1/events/photos/remove` - Remove photos from event (set event_id=null)
 
 **PhotoText:**
 - `GET /phototext` - List all documents (filter by document_type, is_published)
@@ -163,9 +200,14 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ### Bildegalleri
 1. **Login/Register:** Første gang du åpner appen vil du se login-skjermen
 2. **Browse Photos:** Etter innlogging ser du alle bildene dine i et grid
-3. **Search/Filter:** Bruk sidebar til venstre for å søke og filtrere
+3. **Search/Filter:** Bruk sidebar til venstre for å søke og filtrere (inkl. event filter)
 4. **Edit Metadata:** Klikk på et bilde for å åpne detaljvisning og redigere metadata
-5. **Collections:** Opprett samlinger og organiser bilder i grupper
+5. **Collections:** Opprett samlinger og organiser bilder i grupper (many-to-many)
+6. **Events:** Organiser bilder hierarkisk i events (one-to-many: ett foto = én event)
+   - List/tree view for event-oversikt
+   - Breadcrumb navigation i event-hierarkiet
+   - Sett event for bilder fra Input Channels
+   - Flytt events mellom parents
 
 ### Stories (PhotoText)
 1. **Create Story:** Naviger til `/stories` og klikk "New Story"

@@ -22,6 +22,13 @@ export interface PhotoWithTags extends Omit<Photo, 'tags'> {
   tags?: TagSummary[];
   files?: ImageFile[];
   image_files?: ImageFile[]; // Alias for compatibility
+  event_id?: number | null; // One-to-many: photo belongs to max ONE event
+  event?: {
+    id: number;
+    name: string;
+    description?: string | null;
+    start_date?: string | null;
+  } | null; // Populated event details (when backend includes them)
 }
 
 // Tags
@@ -82,6 +89,11 @@ export type SearchParams = Partial<PhotoSearch>;
 export interface PhotoMetadata extends Partial<PhotoUpdate> {
   gps_latitude?: number | null;
   gps_longitude?: number | null;
+}
+
+// Extended search params with event filtering (for future backend support)
+export interface ExtendedSearchParams extends SearchParams {
+  event_id?: number; // Filter photos by event membership
 }
 
 // ===== Frontend-specific Extensions =====
@@ -148,6 +160,81 @@ export interface TimelineParams {
   year?: number | null;
   month?: number | null;
   day?: number | null;
+}
+
+// ===== Events (Hierarchical Photo Organization) =====
+
+export interface Event {
+  id: number;
+  user_id: number;
+  name: string;
+  description: string | null;
+  parent_event_id: number | null;
+  
+  // Temporal context
+  start_date: string | null;  // ISO 8601
+  end_date: string | null;
+  
+  // Spatial context
+  location_name: string | null;
+  gps_latitude: number | null;
+  gps_longitude: number | null;
+  
+  // UI ordering
+  sort_order: number;
+  
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EventWithPhotos extends Event {
+  photo_count: number;  // Direct photos only (not recursive)
+}
+
+export interface EventTreeNode extends Event {
+  children: EventTreeNode[];
+  photo_count: number;
+}
+
+export interface EventTreeResponse {
+  events: EventTreeNode[];
+  total_events: number;
+}
+
+// Request types
+export interface EventCreate {
+  name: string;
+  description?: string | null;
+  parent_event_id?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  location_name?: string | null;
+  gps_latitude?: number | null;
+  gps_longitude?: number | null;
+  sort_order?: number;
+}
+
+export interface EventUpdate {
+  name?: string;
+  description?: string | null;
+  parent_event_id?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  location_name?: string | null;
+  gps_latitude?: number | null;
+  gps_longitude?: number | null;
+  sort_order?: number;
+}
+
+export interface EventMove {
+  new_parent_id: number | null;
+}
+
+export interface EventPhotosResponse {
+  event_id: number;
+  photos_added?: number;
+  photos_removed?: number;
 }
 
 // ===== Utility Types =====

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
-import type { SearchParams, Tag } from '@/lib/types';
+import type { SearchParams, Tag, EventWithPhotos } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -23,6 +23,8 @@ export function SearchFilters({ onSearchChange }: SearchFiltersProps) {
   const [query, setQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<number | null>(null);
+  const [availableEvents, setAvailableEvents] = useState<EventWithPhotos[]>([]);
   const [ratingMin, setRatingMin] = useState<string>('');
   const [ratingMax, setRatingMax] = useState<string>('');
   const [dateFrom, setDateFrom] = useState('');
@@ -31,6 +33,7 @@ export function SearchFilters({ onSearchChange }: SearchFiltersProps) {
 
   useEffect(() => {
     loadTags();
+    loadEvents();
   }, []);
 
   const loadTags = async () => {
@@ -42,14 +45,24 @@ export function SearchFilters({ onSearchChange }: SearchFiltersProps) {
     }
   };
 
+  const loadEvents = async () => {
+    try {
+      const events = await apiClient.getEvents();
+      setAvailableEvents(events);
+    } catch (error) {
+      console.error('Failed to load events:', error);
+    }
+  };
+
   const handleSearch = () => {
-    const searchParams: SearchParams = {
+    const searchParams: SearchParams & { event_id?: number } = {
       // query field doesn't exist in PhotoSearchRequest - remove or map to proper field
       tag_ids: selectedTags.length > 0 ? selectedTags.map(Number).filter(n => !isNaN(n)) : undefined,
       rating_min: ratingMin ? parseInt(ratingMin) : undefined,
       rating_max: ratingMax ? parseInt(ratingMax) : undefined,
       taken_after: dateFrom || undefined,
       taken_before: dateTo || undefined,
+      event_id: selectedEvent || undefined,
     };
 
     onSearchChange(searchParams);
@@ -66,6 +79,7 @@ export function SearchFilters({ onSearchChange }: SearchFiltersProps) {
   const handleReset = () => {
     setQuery('');
     setSelectedTags([]);
+    setSelectedEvent(null);
     setRatingMin('');
     setRatingMax('');
     setDateFrom('');
@@ -128,6 +142,28 @@ export function SearchFilters({ onSearchChange }: SearchFiltersProps) {
 
         {showAdvanced && (
           <div className="space-y-4 pt-4 border-t">
+            {/* Events */}
+            <div className="space-y-2">
+              <Label>Event</Label>
+              <select
+                value={selectedEvent || ''}
+                onChange={(e) => setSelectedEvent(e.target.value ? parseInt(e.target.value) : null)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="">Alle events</option>
+                {availableEvents.map((event) => (
+                  <option key={event.id} value={event.id}>
+                    {event.name} ({event.photo_count} bilder)
+                  </option>
+                ))}
+              </select>
+              {selectedEvent && (
+                <p className="text-xs text-muted-foreground">
+                  Viser bilder fra valgt event
+                </p>
+              )}
+            </div>
+
             {/* Tags */}
             <div className="space-y-2">
               <Label>Tags</Label>

@@ -1,0 +1,392 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
+import { apiClient } from '@/lib/api-client';
+import { usePhotoStore } from '@/lib/photo-store';
+import type { Event, EventWithPhotos, Photo } from '@/lib/types';
+import { PhotoCard } from '@/components/photo-card';
+import { CreateEventDialog } from '@/components/create-event-dialog';
+import { EventBreadcrumb } from '@/components/event-breadcrumb';
+import { MoveEventDialog } from '@/components/move-event-dialog';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  ArrowLeft,
+  Calendar as CalendarIcon,
+  MapPin,
+  MoreVertical,
+  Plus,
+  Trash,
+  Edit,
+  Images,
+  FolderTree,
+  Move,
+} from 'lucide-react';
+
+export default function EventDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { addPhotos } = usePhotoStore();
+
+  const eventId = parseInt(params.id as string);
+  
+  const [event, setEvent] = useState<Event | null>(null);
+  const [childEvents, setChildEvents] = useState<EventWithPhotos[]>([]);
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showCreateChildDialog, setShowCreateChildDialog] = useState(false);
+  const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [includeDescendants, setIncludeDescendants] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated && !isNaN(eventId)) {
+      loadEventData();
+    }
+  }, [isAuthenticated, eventId, includeDescendants]);
+
+  const loadEventData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Load event details
+      const eventData = await apiClient.getEvent(eventId);
+      setEvent(eventData);
+
+      // Load child events
+      const children = await apiClient.getEvents(eventId);
+      setChildEvents(children);
+
+      // Load photos
+      const photoData = await apiClient.getEventPhotos(eventId, includeDescendants);
+      setPhotos(photoData);
+      
+      // Add to photo store cache (cast to PhotoWithTags)
+      if (photoData.length > 0) {
+        addPhotos(photoData as any);
+      }
+    } catch (err) {
+      console.error('Failed to load event:', err);
+      setError(err instanceof Error ? err.message : 'Kunne ikke laste event');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await apiClient.deleteEvent(eventId);
+      router.push('/events');
+    } catch (err) {
+      console.error('Failed to delete event:', err);
+      alert('Kunne ikke slette event');
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
+  const handleChildCreated = () => {
+    loadEventData();
+    setShowCreateChildDialog(false);
+  };
+
+  const formatDateRange = (event: Event) => {
+    if (!event.start_date) return null;
+    
+    const formatDate = (dateString: string) => {
+      return new Date(dateString).toLocaleDateString('no-NO', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    };
+
+    const start = formatDate(event.start_date);
+    const end = event.end_date ? formatDate(event.end_date) : null;
+    return end && end !== start ? `${start} - ${end}` : start;
+  };
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
+          <p className="text-muted-foreground">Laster...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Du må være logget inn</h1>
+          <p className="mt-2 text-muted-foreground">Logg inn for å se events</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
+          <p className="text-muted-foreground">Laster event...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !event) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+        <div className="container mx-auto px-4 py-8">
+          <Button
+            variant="ghost"
+            onClick={() => router.back()}
+            className="mb-6"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Tilbake
+          </Button>
+          
+          <div className="rounded-md bg-destructive/15 p-4 text-destructive">
+            {error || 'Event ikke funnet'}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      <div className="container mx-auto px-4 py-8">
+        {/* Breadcrumb */}
+        <div className="mb-6">
+          <EventBreadcrumb eventId={eventId} currentEventName={event.name} />
+        </div>
+
+        {/* Header with back button */}
+        <div className="mb-6 flex items-center justify-between">
+          <Button
+            variant="ghost"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Tilbake
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => router.push(`/events/${eventId}/edit`)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Rediger
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowMoveDialog(true)}>
+                <Move className="mr-2 h-4 w-4" />
+                Flytt event
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-destructive"
+              >
+                <Trash className="mr-2 h-4 w-4" />
+                Slett
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Event Header */}
+        <div className="mb-8 rounded-lg border bg-card p-6">
+          <h1 className="mb-2 text-3xl font-bold">{event.name}</h1>
+          
+          {event.description && (
+            <p className="mb-4 text-muted-foreground">{event.description}</p>
+          )}
+
+          <div className="flex flex-wrap gap-4 text-sm">
+            {formatDateRange(event) && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <CalendarIcon className="h-4 w-4" />
+                <span>{formatDateRange(event)}</span>
+              </div>
+            )}
+            
+            {event.location_name && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <MapPin className="h-4 w-4" />
+                <span>{event.location_name}</span>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Images className="h-4 w-4" />
+              <span>{photos.length} bilder</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Child Events */}
+        {childEvents.length > 0 && (
+          <div className="mb-8">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <FolderTree className="h-5 w-5" />
+                Under-events
+              </h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCreateChildDialog(true)}
+              >
+                <Plus className="mr-2 h-3 w-3" />
+                Legg til under-event
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {childEvents.map((child) => (
+                <div
+                  key={child.id}
+                  onClick={() => router.push(`/events/${child.id}`)}
+                  className="cursor-pointer rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
+                >
+                  <h3 className="font-semibold">{child.name}</h3>
+                  {child.description && (
+                    <p className="mt-1 text-sm text-muted-foreground line-clamp-1">
+                      {child.description}
+                    </p>
+                  )}
+                  <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                    <Images className="h-3 w-3" />
+                    <span>{child.photo_count} bilder</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Photos Section */}
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Bilder</h2>
+            
+            {childEvents.length > 0 && (
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includeDescendants}
+                  onChange={(e) => setIncludeDescendants(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <span>Inkluder bilder fra under-events</span>
+              </label>
+            )}
+          </div>
+
+          {photos.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
+              <Images className="mb-4 h-12 w-12 text-muted-foreground/30" />
+              <p className="text-muted-foreground">
+                Ingen bilder i denne eventen ennå
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Legg til bilder fra input channels
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {photos.map((photo) => (
+                <PhotoCard
+                  key={photo.hothash}
+                  photo={photo as any}
+                  onClick={() => {
+                    // Handle photo click - could open detail dialog
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Create child event dialog */}
+        <CreateEventDialog
+          open={showCreateChildDialog}
+          onOpenChange={setShowCreateChildDialog}
+          onEventCreated={handleChildCreated}
+          defaultName=""
+        />
+
+        {/* Move event dialog */}
+        <MoveEventDialog
+          open={showMoveDialog}
+          onOpenChange={setShowMoveDialog}
+          event={event}
+          onEventMoved={() => {
+            loadEventData();
+            setShowMoveDialog(false);
+          }}
+        />
+
+        {/* Delete confirmation dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Slett event?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Er du sikker på at du vil slette &quot;{event.name}&quot;?
+                <br />
+                <br />
+                Under-events vil bli flyttet til rot-nivå, og bilder vil forbli i systemet.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>Avbryt</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={deleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleting ? 'Sletter...' : 'Slett'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </div>
+  );
+}
