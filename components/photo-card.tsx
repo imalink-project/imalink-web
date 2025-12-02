@@ -20,6 +20,7 @@ interface PhotoCardProps {
   onClick?: (photo: PhotoWithTags) => void;
   selectionMode?: boolean;
   isSelected?: boolean;
+  isProcessed?: boolean;
   onSelect?: (hothash: string) => void;
   displaySize?: PhotoDisplaySize;
 }
@@ -29,6 +30,7 @@ export function PhotoCard({
   onClick,
   selectionMode = false,
   isSelected = false,
+  isProcessed = false,
   onSelect,
   displaySize = 'medium',
 }: PhotoCardProps) {
@@ -73,6 +75,11 @@ export function PhotoCard({
   const displayName = photo.primary_filename || primaryFile?.filename || 'Unknown';
 
   const handleClick = () => {
+    // Prevent interaction with processed photos in selection mode
+    if (isProcessed && selectionMode) {
+      return;
+    }
+    
     if (selectionMode && onSelect) {
       onSelect(photo.hothash);
     } else {
@@ -82,7 +89,9 @@ export function PhotoCard({
 
   return (
     <Card
-      className={`group cursor-pointer overflow-hidden transition-all hover:shadow-lg ${
+      className={`group overflow-hidden transition-all ${
+        isProcessed ? 'opacity-50 cursor-default' : 'cursor-pointer hover:shadow-lg'
+      } ${
         isSelected ? 'ring-2 ring-primary ring-offset-2' : ''
       }`}
       onClick={handleClick}
@@ -130,6 +139,17 @@ export function PhotoCard({
         {photo.rating && !selectionMode && (
           <div className="absolute top-2 right-2 rounded-md bg-black/50 px-2 py-1 backdrop-blur-sm">
             {renderStars(photo.rating)}
+          </div>
+        )}
+
+        {/* Processed overlay */}
+        {isProcessed && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[2px]">
+            <div className="rounded-full bg-green-500 p-3 shadow-lg">
+              <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
           </div>
         )}
       </div>

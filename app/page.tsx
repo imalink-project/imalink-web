@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { useBildeliste } from '@/lib/bildeliste-context';
-import { BildelisteViewer } from '@/components/bildeliste-viewer';
+import { PhotoGrid } from '@/components/photo-grid';
 import { SearchFilters } from '@/components/search-filters';
 import { PhotoDetailDialog } from '@/components/photo-detail-dialog';
 import type { PhotoWithTags, SearchParams } from '@/lib/types';
@@ -12,11 +11,9 @@ import type { PhotoWithTags, SearchParams } from '@/lib/types';
 export default function Home() {
   const router = useRouter();
   const { loading, isAuthenticated } = useAuth();
-  const { loadFromSearch, activeBildelisteId, setActiveBildeliste } = useBildeliste();
   const [searchParams, setSearchParams] = useState<SearchParams>({});
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoWithTags | null>(null);
   const [showPhotoDetail, setShowPhotoDetail] = useState(false);
-  const [searching, setSearching] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -25,36 +22,11 @@ export default function Home() {
     }
   }, [loading, isAuthenticated, router]);
 
-  // Load initial search results
-  useEffect(() => {
-    if (isAuthenticated) {
-      // Check if we should refresh (e.g., after photo import)
-      const params = new URLSearchParams(window.location.search);
-      const shouldRefresh = params.get('refresh') === 'true';
-      
-      if (shouldRefresh || !activeBildelisteId) {
-        handleSearch(searchParams);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]);
+
 
   // Handle search parameter changes
-  const handleSearchChange = async (params: SearchParams) => {
+  const handleSearchChange = (params: SearchParams) => {
     setSearchParams(params);
-    await handleSearch(params);
-  };
-
-  const handleSearch = async (params: SearchParams) => {
-    setSearching(true);
-    try {
-      const bildelisteId = await loadFromSearch(params, 'Søkeresultat');
-      setActiveBildeliste(bildelisteId);
-    } catch (error) {
-      console.error('Failed to load search results:', error);
-    } finally {
-      setSearching(false);
-    }
   };
 
   const handlePhotoClick = (photo: PhotoWithTags) => {
@@ -101,20 +73,11 @@ export default function Home() {
 
           {/* Photo Grid */}
           <div>
-            {searching && (
-              <div className="flex min-h-[400px] items-center justify-center">
-                <div className="text-center">
-                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
-                  <p className="mt-4 text-zinc-500">Søker...</p>
-                </div>
-              </div>
-            )}
-            {!searching && activeBildelisteId && (
-              <BildelisteViewer
-                bildelisteId={activeBildelisteId}
-                onPhotoClick={handlePhotoClick}
-              />
-            )}
+            <PhotoGrid
+              searchParams={searchParams}
+              onPhotoClick={handlePhotoClick}
+              enableBatchOperations={true}
+            />
           </div>
         </div>
       </div>

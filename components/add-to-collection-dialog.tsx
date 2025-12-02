@@ -54,12 +54,14 @@ export function AddToCollectionDialog({
   const handleAddToCollection = async (collectionId: number) => {
     setAdding(collectionId);
     try {
-      await apiClient.addPhotosToCollection(collectionId, photoHothashes);
+      const result = await apiClient.addPhotosToCollection(collectionId, photoHothashes);
+      console.log(`Added ${photoHothashes.length} photos to collection`, result);
       onPhotosAdded?.();
       onOpenChange(false);
     } catch (err) {
       console.error('Failed to add to collection:', err);
-      alert('Kunne ikke legge til i samling');
+      const errorMsg = err instanceof Error ? err.message : 'Kunne ikke legge til i samling';
+      alert(errorMsg);
     } finally {
       setAdding(null);
     }

@@ -5,25 +5,23 @@ import { apiClient } from '@/lib/api-client';
 import type { PhotoWithTags, SearchParams } from '@/lib/types';
 import { usePhotoStore, PHOTO_DISPLAY_CONFIGS } from '@/lib/photo-store';
 import { PhotoCard } from './photo-card';
+import { AddToCollectionDialog } from './add-to-collection-dialog';
 import { Button } from './ui/button';
-import { Grid2X2, Grid3X3, LayoutGrid, List } from 'lucide-react';
+import { Badge } from './ui/badge';
+import { Grid2X2, Grid3X3, LayoutGrid, List, CheckSquare, Square, FolderPlus, X } from 'lucide-react';
 
 interface PhotoGridProps {
   searchParams?: SearchParams;
   onPhotoClick?: (photo: PhotoWithTags) => void;
-  selectionMode?: boolean;
-  selectedPhotos?: Set<string>;
-  onPhotoSelect?: (hothash: string) => void;
   showViewSelector?: boolean;
+  enableBatchOperations?: boolean; // Enable batch selection features
 }
 
 export function PhotoGrid({ 
   searchParams, 
   onPhotoClick,
-  selectionMode = false,
-  selectedPhotos = new Set(),
-  onPhotoSelect,
   showViewSelector = true,
+  enableBatchOperations = false,
 }: PhotoGridProps) {
   const [photos, setPhotos] = useState<PhotoWithTags[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +29,12 @@ export function PhotoGrid({
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
   const limit = 30;
+  
+  // Batch selection state
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
+  const [processedPhotos, setProcessedPhotos] = useState<Set<string>>(new Set());
+  const [showAddToCollection, setShowAddToCollection] = useState(false);
   
   // Use photo store for caching and display settings
   const { addPhotos, displaySize, setDisplaySize } = usePhotoStore();
@@ -75,10 +79,56 @@ export function PhotoGrid({
   useEffect(() => {
     setOffset(0);
     loadPhotos(false);
+    // Reset selection when search params change
+    setSelectionMode(false);
+    setSelectedPhotos(new Set());
+    setProcessedPhotos(new Set());
   }, [searchParams]);
 
   const handleLoadMore = () => {
     loadPhotos(true);
+  };
+
+  const handleToggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    if (selectionMode) {
+      // Exiting selection mode - clear selections
+      setSelectedPhotos(new Set());
+    }
+  };
+
+  const handlePhotoSelect = (hothash: string) => {
+    setSelectedPhotos((prev) => {
+      const next = new Set(prev);
+      if (next.has(hothash)) {
+        next.delete(hothash);
+      } else {
+        next.add(hothash);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    const unprocessedPhotos = photos.filter(p => !processedPhotos.has(p.hothash));
+    const allUnprocessedHashes = new Set(unprocessedPhotos.map(p => p.hothash));
+    setSelectedPhotos(allUnprocessedHashes);
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedPhotos(new Set());
+  };
+
+  const handlePhotosAdded = () => {
+    // Mark selected photos as processed
+    setProcessedPhotos((prev) => {
+      const next = new Set(prev);
+      selectedPhotos.forEach(hash => next.add(hash));
+      return next;
+    });
+    // Clear selection
+    setSelectedPhotos(new Set());
+    setShowAddToCollection(false);
   };
 
   if (error) {
@@ -114,11 +164,69 @@ export function PhotoGrid({
     );
   }
 
+  // Filter out only unprocessed photos for actions
+  const selectedUnprocessedPhotos = Array.from(selectedPhotos).filter(
+    hash => !processedPhotos.has(hash)
+  );
+
   return (
     <div className="space-y-6">
-      {/* View selector */}
-      {showViewSelector && !selectionMode && (
-        <div className="flex justify-end gap-2">
+      {/* Toolbar with view selector and batch operations */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          {enableBatchOperations && (
+            <>
+              <Button
+                variant={selectionMode ? 'default' : 'outline'}
+                size="sm"
+                onClick={handleToggleSelectionMode}
+              >
+                {selectionMode ? (
+                  <>
+                    <CheckSquare className="mr-2 h-4 w-4" />
+                    Exit Select Mode
+                  </>
+                ) : (
+                  <>
+                    <Square className="mr-2 h-4 w-4" />
+                    Select Photos
+                  </>
+                )}
+              </Button>
+              {selectionMode && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSelectAll}
+                  >
+                    Select All
+                  </Button>
+                  {selectedPhotos.size > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleDeselectAll}
+                    >
+                      Deselect All
+                    </Button>
+                  )}
+                  <Badge variant="secondary">
+                    {selectedPhotos.size} selected
+                  </Badge>
+                  {processedPhotos.size > 0 && (
+                    <Badge variant="outline" className="text-green-600">
+                      {processedPhotos.size} processed
+                    </Badge>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </div>
+
+        {showViewSelector && !selectionMode && (
+          <div className="flex gap-2">
           <Button
             variant={displaySize === 'small' ? 'default' : 'outline'}
             size="sm"
@@ -148,7 +256,8 @@ export function PhotoGrid({
             <List className="h-4 w-4" />
           </Button>
         </div>
-      )}
+        )}
+      </div>
 
       <div className={`grid gap-4 ${config.gridCols}`}>
         {photos.map((photo) => (
@@ -158,11 +267,40 @@ export function PhotoGrid({
             onClick={onPhotoClick}
             selectionMode={selectionMode}
             isSelected={selectedPhotos.has(photo.hothash)}
-            onSelect={onPhotoSelect}
+            isProcessed={processedPhotos.has(photo.hothash)}
+            onSelect={handlePhotoSelect}
             displaySize={displaySize}
           />
         ))}
       </div>
+
+      {/* Floating Action Bar */}
+      {selectionMode && selectedUnprocessedPhotos.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+          <div className="bg-primary text-primary-foreground rounded-full shadow-lg px-6 py-4 flex items-center gap-4">
+            <span className="font-medium">
+              {selectedUnprocessedPhotos.length} photo{selectedUnprocessedPhotos.length !== 1 ? 's' : ''} selected
+            </span>
+            <div className="h-6 w-px bg-primary-foreground/30" />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowAddToCollection(true)}
+            >
+              <FolderPlus className="mr-2 h-4 w-4" />
+              Add to Collection
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDeselectAll}
+              className="hover:bg-primary-foreground/10"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {hasMore && (
         <div className="flex justify-center">
@@ -176,6 +314,14 @@ export function PhotoGrid({
           </Button>
         </div>
       )}
+
+      {/* Add to Collection Dialog */}
+      <AddToCollectionDialog
+        open={showAddToCollection}
+        onOpenChange={setShowAddToCollection}
+        photoHothashes={selectedUnprocessedPhotos}
+        onPhotosAdded={handlePhotosAdded}
+      />
     </div>
   );
 }
