@@ -751,19 +751,22 @@ class ApiClient {
    */
   async setPhotosEvent(eventId: number, hothashes: string[]): Promise<EventPhotosResponse> {
     // Update each photo's event_id using PUT /photos/{hothash}/event
+    // Ensure eventId is a number (not string)
+    const numericEventId = typeof eventId === 'string' ? parseInt(eventId, 10) : eventId;
+    
     const updates = await Promise.all(
       hothashes.map(async (hothash) => {
         const response = await fetch(`${this.baseUrl}/photos/${hothash}/event`, {
           method: 'PUT',
           headers: this.getHeaders(),
-          body: JSON.stringify({ event_id: eventId }),
+          body: JSON.stringify({ event_id: numericEventId }),
         });
         return this.handleResponse<Photo>(response);
       })
     );
 
     return {
-      event_id: eventId,
+      event_id: numericEventId,
       affected_count: updates.length,
       photo_count: updates.length,
     };
