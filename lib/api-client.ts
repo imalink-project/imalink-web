@@ -750,11 +750,16 @@ class ApiClient {
    * One-to-many: Each photo can belong to max ONE event
    */
   async setPhotosEvent(eventId: number, hothashes: string[]): Promise<EventPhotosResponse> {
-    // Update each photo's event_id using PUT /photos/{hothash}
+    // Update each photo's event_id using PUT /photos/{hothash}/event
     const updates = await Promise.all(
-      hothashes.map(hothash =>
-        this.updatePhotoMetadata(hothash, { event_id: eventId })
-      )
+      hothashes.map(async (hothash) => {
+        const response = await fetch(`${this.baseUrl}/photos/${hothash}/event`, {
+          method: 'PUT',
+          headers: this.getHeaders(),
+          body: JSON.stringify({ event_id: eventId }),
+        });
+        return this.handleResponse<Photo>(response);
+      })
     );
 
     return {
@@ -770,11 +775,16 @@ class ApiClient {
    * One-to-many: Clear the event_id field for these photos
    */
   async removePhotosFromEvent(hothashes: string[]): Promise<EventPhotosResponse> {
-    // Update each photo's event_id to null using PUT /photos/{hothash}
+    // Update each photo's event_id to null using PUT /photos/{hothash}/event
     const updates = await Promise.all(
-      hothashes.map(hothash =>
-        this.updatePhotoMetadata(hothash, { event_id: null })
-      )
+      hothashes.map(async (hothash) => {
+        const response = await fetch(`${this.baseUrl}/photos/${hothash}/event`, {
+          method: 'PUT',
+          headers: this.getHeaders(),
+          body: JSON.stringify({ event_id: null }),
+        });
+        return this.handleResponse<Photo>(response);
+      })
     );
 
     return {
