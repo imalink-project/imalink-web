@@ -44,11 +44,14 @@ Next.js frontend for ImaLink bildegalleri-system.
 ✅ **Events** (Hierarkisk foto-organisering)
 - Opprett og administrer events med parent-child struktur
 - Sett event for bilder (one-to-many: ett foto = én event)
+- Batch operations: "Add to Event" i PhotoGrid
 - List og tree view for event-hierarki
 - Event detail med breadcrumbs og photo grid
 - Flytt events mellom parents
 - Event badges på photo cards
-- Event filter i søk (frontend klar, venter på backend)
+- Datoer fjernet fra struktur (nå i description)
+- Timeline temporary grids med batch operations
+- Input Channel med batch operations for organisering
 
 ✅ **PhotoText / Stories** (Artikler med bilder og tekst)
 - Block-basert editor (Heading, Paragraph, Image, List)
@@ -71,8 +74,6 @@ Next.js frontend for ImaLink bildegalleri-system.
 - 📝 PhotoText publishing workflow (API finnes, frontend mangler)
 - 📚 Album document type (API finnes, frontend mangler)
 - 🎬 Slideshow document type (API finnes, frontend mangler)
-- 🎯 Event badges på photos (frontend klar, backend må legge til `event_id` + `event` i PhotoResponse)
-- 🔍 Event filter i search (frontend klar, backend må legge til `event_id` i PhotoSearchRequest)
 
 ## Teknologier
 
@@ -179,9 +180,8 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - `PUT /api/v1/events/{id}` - Update event
 - `DELETE /api/v1/events/{id}` - Delete event (children become roots)
 - `POST /api/v1/events/{id}/move` - Move event to new parent
-- `POST /api/v1/events/{id}/photos` - Set event_id for photos (one-to-many)
+- `PUT /api/v1/photos/{hothash}/event` - Set event_id for photo (body: plain integer)
 - `GET /api/v1/events/{id}/photos` - Get photos in event
-- `POST /api/v1/events/photos/remove` - Remove photos from event (set event_id=null)
 
 **PhotoText:**
 - `GET /phototext` - List all documents (filter by document_type, is_published)
@@ -215,6 +215,21 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 3. **Select Images:** Klikk "Select Image" for å velge fra dine bildelister
 4. **Save Draft:** Stories lagres automatisk som drafts (is_published: false)
 5. **View Story:** Klikk på en story i listen for å se den i blog-layout
+
+### Foto-organisering Workflow
+1. **Importer bilder:** Gå til Input Channels og last opp bilder
+2. **Batch organisering:** 
+   - Kryss av bilder i PhotoGrid
+   - Klikk "Add to Event" eller "Add to Collection"
+   - Bilder markeres som "processed" (grønn hake)
+3. **Timeline organisering:**
+   - Bla i Timeline (år/måned/dag/time)
+   - Klikk "View Photos" på et tidsbucket
+   - Batch-velg og organiser direkte fra dialog
+4. **Event struktur:**
+   - Ett foto kan kun være i én event (one-to-many)
+   - Events er hierarkiske (parent-child)
+   - Datoer er informasjonelle (i description-felt)
 
 ### Bildelister (Frontend-only)
 Bildelister er en frontend-abstraksjon som lar deg organisere bilder midlertidig:

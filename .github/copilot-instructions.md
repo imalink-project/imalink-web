@@ -130,16 +130,41 @@ lib/
 
 ### 9. Events System
 
-- One-to-many: Photo has single `event_id`
-- Hierarchical: Events can have parent events
-- API endpoints: `/api/v1/events/`, `/api/v1/events/tree`
+- **Architecture:** One-to-many (photo can only be in ONE event)
+- **Dates:** Removed from structure - now purely informational in description field
+- **Hierarchical:** Events can have parent events for organization
+- **API:** 
+  - Set event: `PUT /photos/{hothash}/event` with body as plain integer (event_id)
+  - Get events: `GET /api/v1/events/`, `GET /api/v1/events/tree`
+- **Workflow:** Manual curation - desktop app may auto-suggest from folders
 
-### 10. Recent Changes
+### 10. Photo Organization Features
 
-- ✅ Dedicated `/login` page (logout redirects here)
+- **PhotoGrid Component:** Unified photo display with batch operations
+  - Batch selection with checkboxes
+  - "Add to Collection" (many-to-many)
+  - "Add to Event" (one-to-many, replaces existing)
+  - Processed state tracking (grayed out after action)
+  - Floating action bar when photos selected
+
+- **Timeline Temporary Grids:**
+  - Click "View Photos" on any Timeline bucket (year/month/day/hour)
+  - Opens PhotoGrid dialog with batch operations enabled
+  - Easy to select and organize photos by time period
+
+- **Input Channel Organization:**
+  - PhotoGrid with batch operations after import
+  - Organize photos immediately after upload
+
+### 11. Recent Changes (Dec 2025)
+
+- ✅ Removed start/end dates from Events (now in description)
+- ✅ Added "Add to Event" batch operation alongside Collections
+- ✅ Timeline temporary grids with PhotoGrid dialog
+- ✅ Fixed Events API: PUT /photos/{hothash}/event sends plain integer
+- ✅ Unified PhotoGrid component everywhere (removed BildelisteViewer)
+- ✅ User profile moved to top of sidebar
 - ✅ Consistent page structure (no min-h-screen wrappers)
-- ✅ Events system implemented and deployed
-- ✅ AppLayout handles all layout concerns
 
 ## When Creating New Pages
 
