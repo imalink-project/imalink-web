@@ -22,28 +22,38 @@ export default function EventsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   useEffect(() => {
+    console.log('Events page - isAuthenticated:', isAuthenticated, 'authLoading:', authLoading);
     if (isAuthenticated) {
+      console.log('Loading events data...');
       loadData();
+    } else if (!authLoading) {
+      console.log('Not authenticated and not loading');
     }
-  }, [isAuthenticated, viewMode]);
+  }, [isAuthenticated, viewMode, authLoading]);
 
   const loadData = async () => {
+    console.log('loadData called, viewMode:', viewMode);
     setLoading(true);
     setError(null);
 
     try {
       if (viewMode === 'list') {
+        console.log('Loading events list...');
         // Load root events only for list view
         const data = await apiClient.getEvents();
+        console.log('Events loaded successfully:', data.length, 'events');
         setEvents(data);
       } else {
+        console.log('Loading events tree...');
         // Load full tree for tree view
         const treeData = await apiClient.getEventTree();
+        console.log('Event tree loaded successfully:', treeData.events.length, 'root events');
         setEventTree(treeData.events);
       }
     } catch (err) {
-      console.error('Failed to load events:', err);
+      console.error('Failed to load events - full error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Kunne ikke laste events';
+      console.error('Error message:', errorMessage);
       
       // More helpful error messages
       if (errorMessage.includes('Failed to fetch')) {
