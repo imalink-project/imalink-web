@@ -221,20 +221,14 @@ export default function InputChannelDetailPage() {
           {selectedPhotos.size > 0 && (
             <div className="flex gap-2">
               <Button 
-                onClick={async () => {
-                  const photoIds = await getSelectedPhotoIds();
-                  setAddToEventDialogOpen(true);
-                }}
+                onClick={() => setAddToEventDialogOpen(true)}
                 variant="default"
               >
                 <Tag className="h-4 w-4 mr-2" />
                 Legg til i Event
               </Button>
               <Button 
-                onClick={async () => {
-                  const photoIds = await getSelectedPhotoIds();
-                  setAddToCollectionDialogOpen(true);
-                }}
+                onClick={() => setAddToCollectionDialogOpen(true)}
                 variant="outline"
               >
                 <FolderPlus className="h-4 w-4 mr-2" />
