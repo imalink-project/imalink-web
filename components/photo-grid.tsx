@@ -61,10 +61,18 @@ export function PhotoGrid({
         );
         items = collectionPhotos as PhotoWithTags[];
         total = items.length; // TODO: Backend should return total count
-      } else {
-        // Standard photo search
-        const response = await apiClient.getPhotos({
+      } else if (searchParams && Object.keys(searchParams).length > 0) {
+        // Use searchPhotos (POST) for any search params (including date filters)
+        const response = await apiClient.searchPhotos({
           ...searchParams,
+          limit,
+          offset: currentOffset,
+        });
+        items = (response.data || []) as PhotoWithTags[];
+        total = response.meta?.total || items.length;
+      } else {
+        // No params - use simple GET
+        const response = await apiClient.getPhotos({
           limit,
           offset: currentOffset,
         });
