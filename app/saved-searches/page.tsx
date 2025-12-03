@@ -30,6 +30,7 @@ export default function SavedSearchesPage() {
   // Results state
   const [showResults, setShowResults] = useState(false);
   const [executingSearchId, setExecutingSearchId] = useState<number | null>(null);
+  const [searchKey, setSearchKey] = useState(0); // Force PhotoGrid refresh on new search
   
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -67,6 +68,7 @@ export default function SavedSearchesPage() {
   const handleQuickSearch = () => {
     setShowResults(true);
     setExecutingSearchId(null);
+    setSearchKey(prev => prev + 1); // Force refresh
   };
 
   const handleExecuteSavedSearch = async (id: number) => {
@@ -79,6 +81,7 @@ export default function SavedSearchesPage() {
       setCurrentSearchParams(search.search_criteria as SearchParams);
       setExecutingSearchId(id);
       setShowResults(true);
+      setSearchKey(prev => prev + 1); // Force PhotoGrid refresh
       
       // Execute to update last_executed timestamp
       await apiClient.executeSavedSearch(id, 0, 1);
@@ -260,7 +263,7 @@ export default function SavedSearchesPage() {
       </div>
 
       {/* Search Results */}
-      {showResults && currentSearchParams && (
+      {showResults && (
         <div className="mb-8">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold">Søkeresultater</h2>
@@ -270,7 +273,8 @@ export default function SavedSearchesPage() {
           </div>
           
           <PhotoGrid
-            searchParams={currentSearchParams}
+            key={searchKey}
+            searchParams={Object.keys(currentSearchParams).length > 0 ? currentSearchParams : undefined}
             onPhotoClick={handlePhotoClick}
             enableBatchOperations={true}
           />
