@@ -28,6 +28,10 @@ import type {
   EventCreate,
   EventUpdate,
   EventPhotosResponse,
+  SavedSearch,
+  SavedSearchSummary,
+  SavedSearchCreate,
+  SavedSearchUpdate,
 } from './types';
 
 const API_BASE_URL = 'https://api.trollfjell.com/api/v1';
@@ -808,6 +812,78 @@ class ApiClient {
     });
 
     return this.handleResponse<Photo[]>(response);
+  }
+
+  // Saved Searches
+  async getSavedSearches(favoritesOnly: boolean = false, offset: number = 0, limit: number = 100): Promise<{ searches: SavedSearchSummary[]; total: number; offset: number; limit: number }> {
+    const params = new URLSearchParams();
+    params.append('offset', offset.toString());
+    params.append('limit', limit.toString());
+    if (favoritesOnly) {
+      params.append('favorites_only', 'true');
+    }
+    
+    const response = await fetch(`${this.baseUrl}/photo-searches?${params.toString()}`, {
+      headers: this.getHeaders(),
+    });
+
+    return this.handleResponse<{ searches: SavedSearchSummary[]; total: number; offset: number; limit: number }>(response);
+  }
+
+  async getSavedSearch(id: number): Promise<SavedSearch> {
+    const response = await fetch(`${this.baseUrl}/photo-searches/${id}`, {
+      headers: this.getHeaders(),
+    });
+
+    return this.handleResponse<SavedSearch>(response);
+  }
+
+  async createSavedSearch(data: SavedSearchCreate): Promise<SavedSearch> {
+    const response = await fetch(`${this.baseUrl}/photo-searches`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    return this.handleResponse<SavedSearch>(response);
+  }
+
+  async updateSavedSearch(id: number, data: SavedSearchUpdate): Promise<SavedSearch> {
+    const response = await fetch(`${this.baseUrl}/photo-searches/${id}`, {
+      method: 'PUT',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    return this.handleResponse<SavedSearch>(response);
+  }
+
+  async deleteSavedSearch(id: number): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/photo-searches/${id}`, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+    });
+
+    if (response.status !== 204) {
+      await this.handleResponse<void>(response);
+    }
+  }
+
+  async executeSavedSearch(id: number, overrideOffset?: number, overrideLimit?: number): Promise<PaginatedResponse<Photo>> {
+    const params = new URLSearchParams();
+    if (overrideOffset !== undefined) {
+      params.append('override_offset', overrideOffset.toString());
+    }
+    if (overrideLimit !== undefined) {
+      params.append('override_limit', overrideLimit.toString());
+    }
+    
+    const response = await fetch(`${this.baseUrl}/photo-searches/${id}/execute?${params.toString()}`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+    });
+
+    return this.handleResponse<PaginatedResponse<Photo>>(response);
   }
 }
 
