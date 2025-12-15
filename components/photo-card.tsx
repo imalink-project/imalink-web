@@ -87,7 +87,7 @@ export function PhotoCard({
   const cardContent = (
     <div
       className={cn(
-        'group overflow-hidden transition-all',
+        'block overflow-hidden transition-all',
         isProcessed && 'opacity-50 cursor-default',
         !isProcessed && 'cursor-pointer hover:shadow-lg',
         isSelected && 'ring-2 ring-primary ring-offset-2'
