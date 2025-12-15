@@ -95,6 +95,7 @@ export interface PhotoMetadata extends Partial<PhotoUpdate> {
 export interface ExtendedSearchParams extends SearchParams {
   event_id?: number; // Filter photos by event membership
   collection_id?: number; // Filter photos by collection membership
+  include_descendants?: boolean; // Include photos from child events
 }
 
 // ===== Frontend-specific Extensions =====

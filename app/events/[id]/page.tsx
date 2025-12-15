@@ -4,9 +4,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { apiClient } from '@/lib/api-client';
-import { usePhotoStore } from '@/lib/photo-store';
-import type { Event, EventWithPhotos, Photo } from '@/lib/types';
-import { PhotoCard } from '@/components/photo-card';
+import type { Event, EventWithPhotos } from '@/lib/types';
+import { PhotoGrid } from '@/components/photo-grid';
 import { CreateEventDialog } from '@/components/create-event-dialog';
 import { EventBreadcrumb } from '@/components/event-breadcrumb';
 import { MoveEventDialog } from '@/components/move-event-dialog';
@@ -45,13 +44,11 @@ export default function EventDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const { addPhotos } = usePhotoStore();
 
   const eventId = parseInt(params.id as string);
   
   const [event, setEvent] = useState<Event | null>(null);
   const [childEvents, setChildEvents] = useState<EventWithPhotos[]>([]);
-  const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -64,7 +61,7 @@ export default function EventDetailPage() {
     if (isAuthenticated && !isNaN(eventId)) {
       loadEventData();
     }
-  }, [isAuthenticated, eventId, includeDescendants]);
+  }, [isAuthenticated, eventId]);
 
   const loadEventData = async () => {
     setLoading(true);
@@ -78,15 +75,6 @@ export default function EventDetailPage() {
       // Load child events
       const children = await apiClient.getEvents(eventId);
       setChildEvents(children);
-
-      // Load photos
-      const photoData = await apiClient.getEventPhotos(eventId, includeDescendants);
-      setPhotos(photoData);
-      
-      // Add to photo store cache (cast to PhotoWithTags)
-      if (photoData.length > 0) {
-        addPhotos(photoData as any);
-      }
     } catch (err) {
       console.error('Failed to load event:', err);
       setError(err instanceof Error ? err.message : 'Kunne ikke laste event');
@@ -225,11 +213,6 @@ export default function EventDetailPage() {
                 <span>{event.location_name}</span>
               </div>
             )}
-
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Images className="h-4 w-4" />
-              <span>{photos.length} bilder</span>
-            </div>
           </div>
         </div>
 
@@ -292,29 +275,11 @@ export default function EventDetailPage() {
             )}
           </div>
 
-          {photos.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
-              <Images className="mb-4 h-12 w-12 text-muted-foreground/30" />
-              <p className="text-muted-foreground">
-                Ingen bilder i denne eventen ennå
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Legg til bilder fra input channels
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {photos.map((photo) => (
-                <PhotoCard
-                  key={photo.hothash}
-                  photo={photo as any}
-                  onClick={() => {
-                    // Handle photo click - could open detail dialog
-                  }}
-                />
-              ))}
-            </div>
-          )}
+          <PhotoGrid 
+            searchParams={{ event_id: eventId, include_descendants: includeDescendants }}
+            showViewSelector={true}
+            enableBatchOperations={false}
+          />
         </div>
 
         {/* Create child event dialog */}
