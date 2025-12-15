@@ -147,7 +147,7 @@ export const PHOTO_DISPLAY_CONFIGS = {
     showTooltip: true,
     showTags: false,
     showDate: false,
-    objectFit: 'cover' as const,
+    objectFit: 'contain' as const,
   },
   medium: {
     gridCols: 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10',
@@ -156,7 +156,7 @@ export const PHOTO_DISPLAY_CONFIGS = {
     showTooltip: true,
     showTags: false,
     showDate: false,
-    objectFit: 'cover' as const,
+    objectFit: 'contain' as const,
   },
   large: {
     gridCols: 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6',
@@ -174,6 +174,6 @@ export const PHOTO_DISPLAY_CONFIGS = {
     showTooltip: false,
     showTags: true,
     showDate: true,
-    objectFit: 'cover' as const,
+    objectFit: 'contain' as const,
   },
 } as const;
