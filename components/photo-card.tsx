@@ -142,7 +142,7 @@ export function PhotoCard({
         )}
       </div>
 
-      {config.showMetadata && (
+      {config.showMetadata === true && (
         <div className="p-2">
           <p className="truncate text-sm font-medium mb-1">
             {displayName}
