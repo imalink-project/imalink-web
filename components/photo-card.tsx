@@ -124,7 +124,7 @@ export function PhotoCard({
         )}
 
         {/* Rating overlay */}
-        {photo.rating && !selectionMode && (
+        {photo.rating > 0 && !selectionMode && (
           <div className="absolute top-2 right-2 rounded-md bg-black/50 px-2 py-1 backdrop-blur-sm">
             {renderStars(photo.rating)}
           </div>
