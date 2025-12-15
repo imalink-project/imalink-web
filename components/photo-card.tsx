@@ -104,7 +104,7 @@ export function PhotoCard({
         />
 
         {/* Overlay on hover */}
-        <div className="absolute inset-0 bg-black/0 transition-all group-hover:bg-black/20" />
+        <div className="absolute inset-0 bg-transparent transition-all group-hover:bg-black/20" />
 
         {/* Selection checkbox */}
         {selectionMode && (
