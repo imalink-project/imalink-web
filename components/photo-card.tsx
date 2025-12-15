@@ -226,9 +226,11 @@ export function PhotoCard({
               <p className="text-muted-foreground">
                 {formatDate(photo.taken_at || photo.created_at, 'short')}
               </p>
-              <p className="text-muted-foreground">
-                {photo.width} × {photo.height}
-              </p>
+              {photo.width && photo.height && (
+                <p className="text-muted-foreground">
+                  {photo.width} × {photo.height}
+                </p>
+              )}
             </div>
           </TooltipContent>
         </Tooltip>
