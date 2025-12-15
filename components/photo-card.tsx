@@ -142,6 +142,7 @@ export function PhotoCard({
         )}
       </div>
 
+      {/* METADATA SECTION - Only show for large/detailed */}
       {config.showMetadata === true && (
         <div className="p-2">
           <p className="truncate text-sm font-medium mb-1">
