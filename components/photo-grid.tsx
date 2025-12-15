@@ -61,10 +61,21 @@ export function PhotoGrid({
         );
         items = collectionPhotos as PhotoWithTags[];
         total = items.length; // TODO: Backend should return total count
+      } else if (searchParams?.event_id) {
+        // Special handling for event_id - use dedicated endpoint
+        const eventPhotos = await apiClient.getEventPhotos(
+          searchParams.event_id,
+          searchParams.include_descendants || false
+        );
+        // Handle pagination manually for event photos
+        items = eventPhotos.slice(currentOffset, currentOffset + limit) as PhotoWithTags[];
+        total = eventPhotos.length;
       } else if (searchParams && Object.keys(searchParams).length > 0) {
         // Use searchPhotos (POST) for any search params (including date filters)
+        // Remove extended params that backend doesn't understand
+        const { event_id, collection_id, include_descendants, ...backendParams } = searchParams;
         const response = await apiClient.searchPhotos({
-          ...searchParams,
+          ...backendParams,
           limit,
           offset: currentOffset,
         });
