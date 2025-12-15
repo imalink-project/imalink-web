@@ -151,9 +151,11 @@ export function PhotoCard({
           {config.showDate && (
             <div className="flex items-center justify-between text-xs text-zinc-500 mb-2">
               <span>{formatDate(photo.taken_at || photo.created_at, 'short')}</span>
-              <span>
-                {photo.width} × {photo.height}
-              </span>
+              {photo.width && photo.height && (
+                <span>
+                  {photo.width} × {photo.height}
+                </span>
+              )}
             </div>
           )}
 
