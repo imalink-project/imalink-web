@@ -89,7 +89,36 @@ useEffect(() => {
 </div>
 ```
 
-### 6. Styling
+### 6. Shared Components (CRITICAL - Use These!)
+
+**✅ ALWAYS use shared components instead of duplicating code:**
+
+- **Thumbnails:** Use `<Thumbnail>` from `@/components/ui/thumbnail`
+  ```tsx
+  <Thumbnail src={url} alt="Photo" aspect="square" hoverScale />
+  ```
+  
+- **Cards:** Use `CardContainer`, `CardHeader`, `CardMeta` from `@/components/ui/card-container`
+  ```tsx
+  <CardContainer clickable onClick={...}>
+    <CardHeader title="Title" description="Desc" />
+    <CardMeta>
+      <CardMetaItem icon={<Icon />} label="Label" />
+    </CardMeta>
+  </CardContainer>
+  ```
+
+- **Formatting:** Use utils from `@/lib/utils`
+  ```tsx
+  formatDate(date, 'short')    // "15. des 2025"
+  formatDate(date, 'relative') // "2 dager siden"
+  formatBytes(1024)            // "1.00 KB"
+  formatNumber(1234567)        // "1 234 567"
+  ```
+
+**See:** `docs/SHARED_COMPONENTS.md` for complete guide
+
+### 7. Styling
 
 - **Typography:** Tailwind utility classes
 - **Components:** shadcn/ui from `@/components/ui`
@@ -101,7 +130,7 @@ useEffect(() => {
 - Section margin: `mb-6` or `mb-8`
 - Grid gap: `gap-4` or `gap-6`
 
-### 7. File Organization
+### 8. File Organization
 
 ```
 app/
@@ -165,6 +194,7 @@ lib/
 - ✅ Unified PhotoGrid component everywhere (removed BildelisteViewer)
 - ✅ User profile moved to top of sidebar
 - ✅ Consistent page structure (no min-h-screen wrappers)
+- ✅ **Shared components refactor:** Thumbnail, CardContainer, format utils (see `docs/SHARED_COMPONENTS.md`)
 
 ## When Creating New Pages
 
@@ -176,6 +206,7 @@ lib/
 
 ## References
 
+- **Shared Components:** `docs/SHARED_COMPONENTS.md` ⭐ **READ THIS FIRST**
 - **Frontend Conventions:** `docs/FRONTEND_CONVENTIONS.md`
 - **API Spec:** `docs/COMPLETE_API_SPECIFICATION.md`
 - **Architecture:** `docs/ARCHITECTURE.md`
@@ -188,6 +219,7 @@ lib/
 3. ❌ Not handling auth states properly
 4. ❌ Forgetting `'use client'` directive
 5. ❌ Not using `apiClient` for API calls
+6. ❌ **Duplicating thumbnail/card/formatting code instead of using shared components**
 
 ---
 
