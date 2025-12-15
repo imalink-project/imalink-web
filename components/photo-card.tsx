@@ -29,7 +29,7 @@ interface PhotoCardProps {
 const displaySizeToAspect: Record<PhotoDisplaySize, ThumbnailAspect> = {
   small: 'square',
   medium: 'square',
-  large: '4/3',
+  large: 'square',
   detailed: '3/2',
 };
 
@@ -48,6 +48,7 @@ export function PhotoCard({
   // Get display configuration
   const config = PHOTO_DISPLAY_CONFIGS[displaySize];
   const thumbnailAspect = displaySizeToAspect[displaySize];
+  const objectFit = config.objectFit || 'cover';
 
   const renderStars = (rating?: number) => {
     if (!rating) return null;
@@ -84,7 +85,7 @@ export function PhotoCard({
     }
   };
 
-  return (
+  const cardContent = (
     <Card
       className={`group overflow-hidden transition-all ${
         isProcessed ? 'opacity-50 cursor-default' : 'cursor-pointer hover:shadow-lg'
@@ -98,6 +99,7 @@ export function PhotoCard({
           src={imageUrl}
           alt={displayName}
           aspect={thumbnailAspect}
+          objectFit={objectFit}
           showLoading={true}
         />
 
@@ -205,4 +207,30 @@ export function PhotoCard({
       )}
     </Card>
   );
+
+  // Wrap with tooltip for small/medium sizes
+  if (config.showTooltip) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {cardContent}
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="text-xs">
+              <p className="font-semibold">{displayName}</p>
+              <p className="text-muted-foreground">
+                {formatDate(photo.taken_at || photo.created_at, 'short')}
+              </p>
+              <p className="text-muted-foreground">
+                {photo.width} × {photo.height}
+              </p>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return cardContent;
 }

@@ -94,7 +94,8 @@ export function Thumbnail({
   return (
     <div
       className={cn(
-        'relative w-full overflow-hidden bg-muted',
+        'relative w-full overflow-hidden',
+        objectFit === 'contain' ? 'bg-white dark:bg-zinc-900' : 'bg-muted',
         aspectClass,
         className
       )}

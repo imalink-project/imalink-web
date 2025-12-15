@@ -141,31 +141,39 @@ export function usePhoto(hothash: string) {
  */
 export const PHOTO_DISPLAY_CONFIGS = {
   small: {
+    gridCols: 'grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12',
+    cardHeight: 'aspect-square',
+    showMetadata: false,
+    showTooltip: true,
+    showTags: false,
+    showDate: false,
+    objectFit: 'cover' as const,
+  },
+  medium: {
     gridCols: 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10',
     cardHeight: 'aspect-square',
     showMetadata: false,
+    showTooltip: true,
     showTags: false,
     showDate: false,
+    objectFit: 'cover' as const,
   },
-  medium: {
+  large: {
     gridCols: 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6',
     cardHeight: 'aspect-square',
     showMetadata: true,
+    showTooltip: false,
     showTags: false,
     showDate: true,
-  },
-  large: {
-    gridCols: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
-    cardHeight: 'aspect-[4/3]',
-    showMetadata: true,
-    showTags: true,
-    showDate: true,
+    objectFit: 'contain' as const,
   },
   detailed: {
     gridCols: 'grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
     cardHeight: 'aspect-[3/2]',
     showMetadata: true,
+    showTooltip: false,
     showTags: true,
     showDate: true,
+    objectFit: 'cover' as const,
   },
 } as const;
