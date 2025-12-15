@@ -4,7 +4,6 @@ import type { PhotoWithTags } from '@/lib/types';
 import type { PhotoDisplaySize } from '@/lib/photo-store';
 import { PHOTO_DISPLAY_CONFIGS } from '@/lib/photo-store';
 import { apiClient } from '@/lib/api-client';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Thumbnail, type ThumbnailAspect } from '@/components/ui/thumbnail';
 import { formatDate, cn } from '@/lib/utils';
@@ -86,9 +85,9 @@ export function PhotoCard({
   };
 
   const cardContent = (
-    <Card
+    <div
       className={cn(
-        'group overflow-hidden transition-all p-0 gap-0',
+        'group overflow-hidden transition-all',
         isProcessed && 'opacity-50 cursor-default',
         !isProcessed && 'cursor-pointer hover:shadow-lg',
         isSelected && 'ring-2 ring-primary ring-offset-2'
@@ -208,7 +207,7 @@ export function PhotoCard({
           )}
         </div>
       )}
-    </Card>
+    </div>
   );
 
   // Wrap with tooltip for small/medium sizes
