@@ -1,13 +1,13 @@
 'use client';
 
-import Image from 'next/image';
-import { useState } from 'react';
 import type { PhotoWithTags } from '@/lib/types';
 import type { PhotoDisplaySize } from '@/lib/photo-store';
 import { PHOTO_DISPLAY_CONFIGS } from '@/lib/photo-store';
 import { apiClient } from '@/lib/api-client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Thumbnail, type ThumbnailAspect } from '@/components/ui/thumbnail';
+import { formatDate } from '@/lib/utils';
 import {
   Tooltip,
   TooltipContent,
@@ -25,6 +25,14 @@ interface PhotoCardProps {
   displaySize?: PhotoDisplaySize;
 }
 
+// Map display size to thumbnail aspect ratio
+const displaySizeToAspect: Record<PhotoDisplaySize, ThumbnailAspect> = {
+  small: 'square',
+  medium: 'square',
+  large: '4/3',
+  detailed: '3/2',
+};
+
 export function PhotoCard({ 
   photo, 
   onClick,
@@ -34,23 +42,12 @@ export function PhotoCard({
   onSelect,
   displaySize = 'medium',
 }: PhotoCardProps) {
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-
   // Use hot preview for initial load
   const imageUrl = apiClient.getHotPreviewUrl(photo.hothash);
   
   // Get display configuration
   const config = PHOTO_DISPLAY_CONFIGS[displaySize];
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return null;
-    return new Date(dateString).toLocaleDateString('nb-NO', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
+  const thumbnailAspect = displaySizeToAspect[displaySize];
 
   const renderStars = (rating?: number) => {
     if (!rating) return null;
@@ -96,24 +93,13 @@ export function PhotoCard({
       }`}
       onClick={handleClick}
     >
-      <div className={`relative ${config.cardHeight} bg-zinc-100 dark:bg-zinc-800`}>
-        {!imageError ? (
-          <Image
-            src={imageUrl}
-            alt={displayName}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className={`object-cover transition-opacity duration-300 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-sm text-zinc-500">
-            Failed to load image
-          </div>
-        )}
+      <div className="relative">
+        <Thumbnail
+          src={imageUrl}
+          alt={displayName}
+          aspect={thumbnailAspect}
+          showLoading={true}
+        />
 
         {/* Overlay on hover */}
         <div className="absolute inset-0 bg-black/0 transition-all group-hover:bg-black/20" />
@@ -162,7 +148,7 @@ export function PhotoCard({
 
           {config.showDate && (
             <div className="flex items-center justify-between text-xs text-zinc-500">
-              <span>{formatDate(photo.taken_at || photo.created_at)}</span>
+              <span>{formatDate(photo.taken_at || photo.created_at, 'short')}</span>
               <span>
                 {photo.width} × {photo.height}
               </span>

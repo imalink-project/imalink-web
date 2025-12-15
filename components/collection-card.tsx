@@ -1,12 +1,13 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { Calendar, Image as ImageIcon } from 'lucide-react';
 import type { Collection } from '@/lib/types';
 import { apiClient } from '@/lib/api-client';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Thumbnail } from '@/components/ui/thumbnail';
+import { CardContainer, CardMeta, CardMetaItem } from '@/components/ui/card-container';
+import { formatDate } from '@/lib/utils';
 
 interface CollectionCardProps {
   collection: Collection;
@@ -17,33 +18,16 @@ export function CollectionCard({ collection }: CollectionCardProps) {
     ? apiClient.getHotPreviewUrl(collection.cover_photo_hothash)
     : null;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('no-NO', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
   return (
     <Link href={`/collections/${collection.id}`}>
-      <Card className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg">
+      <CardContainer clickable hover>
         {/* Cover Image */}
-        <div className="relative aspect-video w-full overflow-hidden bg-muted">
-          {coverImageUrl ? (
-            <Image
-              src={coverImageUrl}
-              alt={collection.name}
-              fill
-              className="object-cover transition-transform group-hover:scale-105"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <ImageIcon className="h-16 w-16 text-muted-foreground/30" />
-            </div>
-          )}
-        </div>
+        <Thumbnail
+          src={coverImageUrl}
+          alt={collection.name}
+          aspect="video"
+          hoverScale
+        />
 
         {/* Content */}
         <div className="p-4">
@@ -55,17 +39,16 @@ export function CollectionCard({ collection }: CollectionCardProps) {
             </p>
           )}
 
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <ImageIcon className="h-3 w-3" />
-              <span>{collection.photo_count} {collection.photo_count === 1 ? 'bilde' : 'bilder'}</span>
-            </div>
-            
-            <div className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              <span>{formatDate(collection.created_at)}</span>
-            </div>
-          </div>
+          <CardMeta className="justify-between">
+            <CardMetaItem
+              icon={<ImageIcon className="h-3 w-3" />}
+              label={`${collection.photo_count} ${collection.photo_count === 1 ? 'bilde' : 'bilder'}`}
+            />
+            <CardMetaItem
+              icon={<Calendar className="h-3 w-3" />}
+              label={formatDate(collection.created_at)}
+            />
+          </CardMeta>
 
           {collection.updated_at !== collection.created_at && (
             <div className="mt-2">
@@ -75,7 +58,7 @@ export function CollectionCard({ collection }: CollectionCardProps) {
             </div>
           )}
         </div>
-      </Card>
+      </CardContainer>
     </Link>
   );
 }
