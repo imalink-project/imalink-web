@@ -7,7 +7,7 @@ import { apiClient } from '@/lib/api-client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Thumbnail, type ThumbnailAspect } from '@/components/ui/thumbnail';
-import { formatDate } from '@/lib/utils';
+import { formatDate, cn } from '@/lib/utils';
 import {
   Tooltip,
   TooltipContent,
@@ -87,11 +87,12 @@ export function PhotoCard({
 
   const cardContent = (
     <Card
-      className={`group overflow-hidden transition-all ${
-        isProcessed ? 'opacity-50 cursor-default' : 'cursor-pointer hover:shadow-lg'
-      } ${
-        isSelected ? 'ring-2 ring-primary ring-offset-2' : ''
-      }`}
+      className={cn(
+        'group overflow-hidden transition-all p-0 gap-0',
+        isProcessed && 'opacity-50 cursor-default',
+        !isProcessed && 'cursor-pointer hover:shadow-lg',
+        isSelected && 'ring-2 ring-primary ring-offset-2'
+      )}
       onClick={handleClick}
     >
       <div className="relative">
@@ -143,13 +144,13 @@ export function PhotoCard({
       </div>
 
       {config.showMetadata && (
-        <div className="p-3 space-y-2">
-          <p className="truncate text-sm font-medium">
+        <div className="p-2">
+          <p className="truncate text-sm font-medium mb-1">
             {displayName}
           </p>
 
           {config.showDate && (
-            <div className="flex items-center justify-between text-xs text-zinc-500">
+            <div className="flex items-center justify-between text-xs text-zinc-500 mb-2">
               <span>{formatDate(photo.taken_at || photo.created_at, 'short')}</span>
               <span>
                 {photo.width} × {photo.height}
@@ -159,7 +160,7 @@ export function PhotoCard({
 
           {/* Tags */}
           {config.showTags && photo.tags && photo.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1 mb-2">
               {photo.tags.slice(0, 3).map((tag) => (
                 <Badge key={tag.id} variant="secondary" className="text-xs">
                   {tag.name}
@@ -175,31 +176,33 @@ export function PhotoCard({
 
           {/* Event badge (one-to-many: max ONE event) */}
           {config.showTags && photo.event && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge 
-                    variant="outline" 
-                    className="text-xs border-blue-500 text-blue-700 dark:text-blue-400 cursor-help"
-                  >
-                    📅 {photo.event.name}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <div className="text-xs">
-                    <p className="font-semibold">{photo.event.name}</p>
-                    {photo.event.description && (
-                      <p className="text-muted-foreground mt-1">{photo.event.description}</p>
-                    )}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <div className="mb-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs border-blue-500 text-blue-700 dark:text-blue-400 cursor-help"
+                    >
+                      📅 {photo.event.name}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="text-xs">
+                      <p className="font-semibold">{photo.event.name}</p>
+                      {photo.event.description && (
+                        <p className="text-muted-foreground mt-1">{photo.event.description}</p>
+                      )}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           )}
 
           {/* Location */}
           {config.showTags && (photo.gps_latitude || photo.gps_longitude) && (
-            <p className="truncate text-xs text-zinc-500">
+            <p className="truncate text-xs text-zinc-500 mb-1">
               📍 {photo.gps_latitude?.toFixed(4)}, {photo.gps_longitude?.toFixed(4)}
             </p>
           )}
