@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { apiClient } from '@/lib/api-client';
-import type { PhotoWithTags, PhotoUpdate, PhotoStack, TagAutocomplete } from '@/lib/types';
+import type { PhotoWithTags, PhotoUpdate, PhotoStack, TagAutocomplete, Author, Event, Collection } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { VisibilityBadge } from '@/components/visibility-badge';
-import { Star, MapPin, Calendar, Tag as TagIcon, Save, ZoomIn, ZoomOut, Maximize2, Camera, FileText, Eye, Hash, Folder } from 'lucide-react';
+import { Star, MapPin, Calendar, Tag as TagIcon, Save, ZoomIn, ZoomOut, Maximize2, Camera, FileText, Eye, Hash, Folder, User, CalendarDays, FolderOpen } from 'lucide-react';
 
 interface PhotoDetailDialogProps {
   photo: PhotoWithTags | null;
@@ -50,6 +50,9 @@ export function PhotoDetailDialog({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const imageContainerRef = useRef<HTMLDivElement>(null);
+  const [author, setAuthor] = useState<Author | null>(null);
+  const [event, setEvent] = useState<Event | null>(null);
+  const [collections, setCollections] = useState<Collection[]>([]);
 
   useEffect(() => {
     if (photo) {
@@ -66,6 +69,11 @@ export function PhotoDetailDialog({
       
       // Fetch coldpreview with authentication
       loadColdPreview(photo.hothash);
+      
+      // Load related data
+      loadAuthor(photo.author_id);
+      loadEvent(photo.event_id);
+      loadCollections(photo.hothash);
     }
 
     return () => {
@@ -75,6 +83,54 @@ export function PhotoDetailDialog({
       }
     };
   }, [photo]);
+
+  const loadAuthor = async (authorId: number | null | undefined) => {
+    if (!authorId) {
+      setAuthor(null);
+      return;
+    }
+    try {
+      const authorData = await apiClient.getAuthor(authorId);
+      setAuthor(authorData);
+    } catch (err) {
+      console.error('Failed to load author:', err);
+      setAuthor(null);
+    }
+  };
+
+  const loadEvent = async (eventId: number | null | undefined) => {
+    if (!eventId) {
+      setEvent(null);
+      return;
+    }
+    try {
+      const eventData = await apiClient.getEvent(eventId);
+      setEvent(eventData);
+    } catch (err) {
+      console.error('Failed to load event:', err);
+      setEvent(null);
+    }
+  };
+
+  const loadCollections = async (hothash: string) => {
+    try {
+      // Fetch all collections and filter those containing this photo
+      const allCollections = await apiClient.getCollections(0, 100);
+      const photoCollections: Collection[] = [];
+      
+      for (const collection of allCollections.collections) {
+        const photos = await apiClient.getCollectionPhotos(collection.id, 0, 1000);
+        if (photos.some(p => p.hothash === hothash)) {
+          photoCollections.push(collection);
+        }
+      }
+      
+      setCollections(photoCollections);
+    } catch (err) {
+      console.error('Failed to load collections:', err);
+      setCollections([]);
+    }
+  };
 
   const loadColdPreview = async (hothash: string) => {
     setLoadingPreview(true);
@@ -485,6 +541,97 @@ export function PhotoDetailDialog({
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder="F.eks. Natur, Portrett, Arkitektur..."
               />
+            </div>
+
+            <Separator />
+
+            {/* Photographer/Author */}
+            <div>
+              <Label className="flex items-center gap-2 mb-3">
+                <User className="h-4 w-4" />
+                Fotograf
+              </Label>
+              {author ? (
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Navn:</span>
+                    <span className="font-medium">{author.name}</span>
+                  </div>
+                  {author.email && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">E-post:</span>
+                      <span className="text-xs">{author.email}</span>
+                    </div>
+                  )}
+                  {author.bio && (
+                    <div className="pt-2">
+                      <p className="text-xs text-muted-foreground">{author.bio}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Ingen fotograf knyttet til dette bildet</p>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Event */}
+            <div>
+              <Label className="flex items-center gap-2 mb-3">
+                <CalendarDays className="h-4 w-4" />
+                Event
+              </Label>
+              {event ? (
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Navn:</span>
+                    <span className="font-medium">{event.name}</span>
+                  </div>
+                  {event.description && (
+                    <div className="pt-2">
+                      <p className="text-xs text-muted-foreground">{event.description}</p>
+                    </div>
+                  )}
+                  {event.location_name && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Sted:</span>
+                      <span className="text-xs">{event.location_name}</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Ikke knyttet til et event</p>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Collections */}
+            <div>
+              <Label className="flex items-center gap-2 mb-3">
+                <FolderOpen className="h-4 w-4" />
+                Collections
+              </Label>
+              {collections.length > 0 ? (
+                <div className="space-y-2">
+                  {collections.map((collection) => (
+                    <div key={collection.id} className="flex items-start justify-between text-sm p-2 rounded-md bg-muted/50">
+                      <div className="flex-1">
+                        <div className="font-medium">{collection.name}</div>
+                        {collection.description && (
+                          <div className="text-xs text-muted-foreground mt-1">{collection.description}</div>
+                        )}
+                      </div>
+                      <Badge variant="secondary" className="ml-2 text-xs">
+                        {collection.photo_count || 0}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Ikke lagt til i noen collections</p>
+              )}
             </div>
 
             <Separator />
