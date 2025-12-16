@@ -222,7 +222,7 @@ export function PhotoCard({
             {cardContent}
           </TooltipTrigger>
           <TooltipContent>
-            <div className="text-xs">
+            <div className="text-xs space-y-1">
               <p className="font-semibold">{displayName}</p>
               <p className="text-muted-foreground">
                 {formatDate(photo.taken_at || photo.created_at, 'short')}
@@ -230,6 +230,16 @@ export function PhotoCard({
               {photo.width && photo.height && (
                 <p className="text-muted-foreground">
                   {photo.width} × {photo.height}
+                </p>
+              )}
+              {photo.author && (
+                <p className="text-muted-foreground">
+                  📷 {photo.author.name}
+                </p>
+              )}
+              {photo.event && (
+                <p className="text-muted-foreground">
+                  📅 {photo.event.name}
                 </p>
               )}
             </div>
