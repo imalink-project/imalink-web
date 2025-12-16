@@ -7,6 +7,7 @@ import { usePhotoStore, PHOTO_DISPLAY_CONFIGS } from '@/lib/photo-store';
 import { PhotoCard } from './photo-card';
 import { AddToCollectionDialog } from './add-to-collection-dialog';
 import { AddToEventDialog } from './add-to-event-dialog';
+import { PhotoDetailDialog } from './photo-detail-dialog';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import {
@@ -48,6 +49,10 @@ export function PhotoGrid({
   const [showAddToCollection, setShowAddToCollection] = useState(false);
   const [showAddToEvent, setShowAddToEvent] = useState(false);
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
+  
+  // Photo detail state
+  const [selectedPhoto, setSelectedPhoto] = useState<PhotoWithTags | null>(null);
+  const [showPhotoDetail, setShowPhotoDetail] = useState(false);
   
   // Use photo store for caching and display settings
   const { addPhotos, displaySize, setDisplaySize } = usePhotoStore();
@@ -207,6 +212,25 @@ export function PhotoGrid({
     // Clear selection
     setSelectedPhotos(new Set());
     setShowAddToCollection(false);
+  };
+
+  const handlePhotoClick = (photo: PhotoWithTags) => {
+    if (onPhotoClick) {
+      // If external handler provided, use it
+      onPhotoClick(photo);
+    } else {
+      // Otherwise, use built-in photo detail dialog
+      setSelectedPhoto(photo);
+      setShowPhotoDetail(true);
+    }
+  };
+
+  const handlePhotoUpdated = (updatedPhoto: PhotoWithTags) => {
+    // Update the photo in the local list
+    setPhotos((prev) => prev.map(p => 
+      p.hothash === updatedPhoto.hothash ? updatedPhoto : p
+    ));
+    setSelectedPhoto(updatedPhoto);
   };
 
   if (error) {
@@ -454,7 +478,7 @@ export function PhotoGrid({
                     <PhotoCard 
                       key={photo.hothash} 
                       photo={photo} 
-                      onClick={onPhotoClick}
+                      onClick={handlePhotoClick}
                       selectionMode={selectionMode}
                       isSelected={selectedPhotos.has(photo.hothash)}
                       isProcessed={processedPhotos.has(photo.hothash)}
@@ -474,7 +498,7 @@ export function PhotoGrid({
             <PhotoCard 
               key={photo.hothash} 
               photo={photo} 
-              onClick={onPhotoClick}
+              onClick={handlePhotoClick}
               selectionMode={selectionMode}
               isSelected={selectedPhotos.has(photo.hothash)}
               isProcessed={processedPhotos.has(photo.hothash)}
@@ -549,6 +573,16 @@ export function PhotoGrid({
         photoHothashes={selectedUnprocessedPhotos}
         onPhotosAdded={handlePhotosAdded}
       />
+
+      {/* Photo Detail Dialog (built-in, unless external handler provided) */}
+      {!onPhotoClick && (
+        <PhotoDetailDialog
+          photo={selectedPhoto}
+          open={showPhotoDetail}
+          onOpenChange={setShowPhotoDetail}
+          onPhotoUpdated={handlePhotoUpdated}
+        />
+      )}
     </div>
   );
 }
