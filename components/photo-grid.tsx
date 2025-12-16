@@ -9,6 +9,13 @@ import { AddToCollectionDialog } from './add-to-collection-dialog';
 import { AddToEventDialog } from './add-to-event-dialog';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
 import { Grid2X2, Grid3X3, LayoutGrid, List, CheckSquare, Square, FolderPlus, CalendarDays, X } from 'lucide-react';
 
 interface PhotoGridProps {
@@ -29,7 +36,9 @@ export function PhotoGrid({
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
-  const limit = 30;
+  const [limit, setLimit] = useState(500);
+  const [total, setTotal] = useState<number>(0);
+  const [totalIsApproximate, setTotalIsApproximate] = useState(false); // For collections without total count
   
   // Batch selection state
   const [selectionMode, setSelectionMode] = useState(false);
@@ -60,7 +69,10 @@ export function PhotoGrid({
           limit
         );
         items = collectionPhotos as PhotoWithTags[];
-        total = items.length; // TODO: Backend should return total count
+        // Backend doesn't return total count for collections
+        // Use items.length as approximation - may be less than actual total
+        total = currentOffset + items.length;
+        setTotalIsApproximate(items.length === limit); // If full page, there may be more
       } else if (searchParams?.event_id) {
         // Special handling for event_id - use dedicated endpoint
         const eventPhotos = await apiClient.getEventPhotos(
@@ -70,6 +82,7 @@ export function PhotoGrid({
         // Handle pagination manually for event photos
         items = eventPhotos.slice(currentOffset, currentOffset + limit) as PhotoWithTags[];
         total = eventPhotos.length;
+        setTotalIsApproximate(false); // Event photos: we have exact count
       } else if (searchParams && Object.keys(searchParams).length > 0) {
         // Use searchPhotos (POST) for any search params (including date filters)
         // Remove extended params that backend doesn't understand
@@ -81,6 +94,7 @@ export function PhotoGrid({
         });
         items = (response.data || []) as PhotoWithTags[];
         total = response.meta?.total || items.length;
+        setTotalIsApproximate(false); // Search returns exact total
       } else {
         // No params - use simple GET
         const response = await apiClient.getPhotos({
@@ -89,6 +103,7 @@ export function PhotoGrid({
         });
         items = (response.data || []) as PhotoWithTags[];
         total = response.meta?.total || items.length;
+        setTotalIsApproximate(false); // getPhotos returns exact total
       }
 
       console.log('Photos response:', items.length, 'items');
@@ -103,6 +118,7 @@ export function PhotoGrid({
       }
 
       setOffset(currentOffset + items.length);
+      setTotal(total);
       setHasMore(currentOffset + items.length < total);
     } catch (err) {
       console.error('Failed to load photos:', err);
@@ -206,10 +222,44 @@ export function PhotoGrid({
   );
 
   return (
-    <div className="space-y-6">
-      {/* Toolbar with view selector and batch operations */}
+    <div className="space-y-4">
+      {/* Toolbar with limit selector, batch operations and view selector */}
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+          {/* Limit selector and total count */}
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-zinc-600 dark:text-zinc-400">Show:</span>
+              <Select
+                value={limit.toString()}
+                onValueChange={(value) => {
+                  setLimit(Number(value));
+                  setOffset(0);
+                  setPhotos([]);
+                  loadPhotos(false);
+                }}
+              >
+                <SelectTrigger className="w-[100px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30">30</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                  <SelectItem value="200">200</SelectItem>
+                  <SelectItem value="500">500</SelectItem>
+                  <SelectItem value="1000">1000</SelectItem>
+                  <SelectItem value="2000">2000</SelectItem>
+                  <SelectItem value="4000">4000</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-zinc-500">
+              Total: {total.toLocaleString('nb-NO')}{totalIsApproximate ? '+' : ''} photos
+            </p>
+          </div>
+
+          {/* Batch operations */}
           {enableBatchOperations && (
             <>
               <Button
