@@ -7,6 +7,8 @@ import { usePhotoStore, PHOTO_DISPLAY_CONFIGS } from '@/lib/photo-store';
 import { PhotoCard } from './photo-card';
 import { AddToCollectionDialog } from './add-to-collection-dialog';
 import { AddToEventDialog } from './add-to-event-dialog';
+import { BatchSetAuthorDialog } from './batch-set-author-dialog';
+import { BatchSetRatingDialog } from './batch-set-rating-dialog';
 import { PhotoDetailDialog } from './photo-detail-dialog';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -17,7 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
-import { Grid2X2, Grid3X3, LayoutGrid, List, CheckSquare, Square, FolderPlus, CalendarDays, X, Calendar } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+import { Grid2X2, Grid3X3, LayoutGrid, List, CheckSquare, Square, FolderPlus, CalendarDays, X, Calendar, User, Star, Clock, MapPin, Image, MoreHorizontal } from 'lucide-react';
 
 interface PhotoGridProps {
   searchParams?: ExtendedSearchParams;
@@ -48,6 +58,8 @@ export function PhotoGrid({
   const [processedPhotos, setProcessedPhotos] = useState<Set<string>>(new Set());
   const [showAddToCollection, setShowAddToCollection] = useState(false);
   const [showAddToEvent, setShowAddToEvent] = useState(false);
+  const [showSetAuthor, setShowSetAuthor] = useState(false);
+  const [showSetRating, setShowSetRating] = useState(false);
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
   
   // Photo detail state
@@ -512,32 +524,95 @@ export function PhotoGrid({
       {/* Floating Action Bar */}
       {selectionMode && selectedUnprocessedPhotos.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-          <div className="bg-primary text-primary-foreground rounded-full shadow-lg px-6 py-4 flex items-center gap-4">
-            <span className="font-medium">
-              {selectedUnprocessedPhotos.length} photo{selectedUnprocessedPhotos.length !== 1 ? 's' : ''} selected
-            </span>
-            <div className="h-6 w-px bg-primary-foreground/30" />
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setShowAddToCollection(true)}
-            >
-              <FolderPlus className="mr-2 h-4 w-4" />
-              Add to Collection
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setShowAddToEvent(true)}
-            >
-              <CalendarDays className="mr-2 h-4 w-4" />
-              Add to Event
-            </Button>
+          <div className="bg-card border-2 border-primary/20 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-3 backdrop-blur-sm">
+            <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full">
+              <CheckSquare className="h-4 w-4 text-primary" />
+              <span className="font-semibold text-sm">
+                {selectedUnprocessedPhotos.length} valgt
+              </span>
+            </div>
+            
+            <div className="h-8 w-px bg-border" />
+            
+            {/* Primary Actions */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddToCollection(true)}
+                className="gap-2"
+              >
+                <FolderPlus className="h-4 w-4" />
+                Collection
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddToEvent(true)}
+                className="gap-2"
+              >
+                <CalendarDays className="h-4 w-4" />
+                Event
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSetAuthor(true)}
+                className="gap-2"
+              >
+                <User className="h-4 w-4" />
+                Fotograf
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSetRating(true)}
+                className="gap-2"
+              >
+                <Star className="h-4 w-4" />
+                Rating
+              </Button>
+            </div>
+            
+            <div className="h-8 w-px bg-border" />
+            
+            {/* More Actions Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <MoreHorizontal className="h-4 w-4" />
+                  Mer
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Flere handlinger</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem disabled>
+                  <Clock className="mr-2 h-4 w-4" />
+                  <span>Juster tid</span>
+                  <span className="ml-auto text-xs text-muted-foreground">Kommer snart</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled>
+                  <MapPin className="mr-2 h-4 w-4" />
+                  <span>Juster posisjon</span>
+                  <span className="ml-auto text-xs text-muted-foreground">Kommer snart</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled>
+                  <Image className="mr-2 h-4 w-4" />
+                  <span>Editer preview</span>
+                  <span className="ml-auto text-xs text-muted-foreground">Kommer snart</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <div className="h-8 w-px bg-border" />
+            
+            {/* Close Button */}
             <Button
               variant="ghost"
               size="sm"
               onClick={handleDeselectAll}
-              className="hover:bg-primary-foreground/10"
+              className="hover:bg-destructive/10 hover:text-destructive"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -572,6 +647,22 @@ export function PhotoGrid({
         onOpenChange={setShowAddToEvent}
         photoHothashes={selectedUnprocessedPhotos}
         onPhotosAdded={handlePhotosAdded}
+      />
+
+      {/* Batch Set Author Dialog */}
+      <BatchSetAuthorDialog
+        open={showSetAuthor}
+        onOpenChange={setShowSetAuthor}
+        photoHothashes={selectedUnprocessedPhotos}
+        onPhotosUpdated={handlePhotosAdded}
+      />
+
+      {/* Batch Set Rating Dialog */}
+      <BatchSetRatingDialog
+        open={showSetRating}
+        onOpenChange={setShowSetRating}
+        photoHothashes={selectedUnprocessedPhotos}
+        onPhotosUpdated={handlePhotosAdded}
       />
 
       {/* Photo Detail Dialog (built-in, unless external handler provided) */}
