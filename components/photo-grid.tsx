@@ -249,13 +249,11 @@ export function PhotoGrid({
                   <SelectItem value="200">200</SelectItem>
                   <SelectItem value="500">500</SelectItem>
                   <SelectItem value="1000">1000</SelectItem>
-                  <SelectItem value="2000">2000</SelectItem>
-                  <SelectItem value="4000">4000</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <p className="text-xs text-zinc-500">
-              Total: {total.toLocaleString('nb-NO')}{totalIsApproximate ? '+' : ''} photos
+              Showing {photos.length.toLocaleString('nb-NO')} of {total.toLocaleString('nb-NO')}{totalIsApproximate ? '+' : ''}
             </p>
           </div>
 
