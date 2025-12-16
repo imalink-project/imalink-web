@@ -169,12 +169,23 @@ lib/
 
 ### 10. Photo Organization Features
 
-- **PhotoGrid Component:** Unified photo display with batch operations
-  - Batch selection with checkboxes
-  - "Add to Collection" (many-to-many)
-  - "Add to Event" (one-to-many, replaces existing)
-  - Processed state tracking (grayed out after action)
-  - Floating action bar when photos selected
+- **PhotoGrid Component:** Unified photo workspace with batch operations
+  - **Philosophy:** Workspace tool, NOT an album viewer
+  - **Always sorts by date:** Newest first (descending), regardless of source
+  - **Configurable limit:** 30-1000 photos (default 500)
+  - **Date grouping toggle:** Optional month/day headers (Calendar button)
+  - **Batch selection:** Checkboxes with Shift-click range selection
+  - **Batch operations:** "Add to Collection" (many-to-many), "Add to Event" (one-to-many)
+  - **Processed state:** Grayed out after action
+  - **Floating action bar:** When photos selected
+  - **Transparent count:** Shows "Showing X of Y (sorted by date, newest first)"
+
+- **PhotoGrid Sorting Behavior:**
+  - **Always sorts:** Uses `sortedPhotos` from `photos.sort()` by date taken (newest first)
+  - **Partial data:** Sorts what's loaded, "Load More" appends and re-sorts
+  - **All views:** Both flat and grouped rendering use same `sortedPhotos` array
+  - **Shift-select:** Uses `sortedPhotos` for correct range indexing
+  - **Future plans:** Multi-criteria sorting (name, size, rating), direction toggle
 
 - **Timeline Temporary Grids:**
   - Click "View Photos" on any Timeline bucket (year/month/day/hour)
@@ -195,6 +206,10 @@ lib/
 - ✅ User profile moved to top of sidebar
 - ✅ Consistent page structure (no min-h-screen wrappers)
 - ✅ **Shared components refactor:** Thumbnail, CardContainer, format utils (see `docs/SHARED_COMPONENTS.md`)
+- ✅ **PhotoGrid always-sort:** Workspace philosophy, always sorts by date (newest first)
+- ✅ **Configurable limit:** 30-1000 with dropdown (default 500)
+- ✅ **Date grouping:** Calendar toggle with month/day headers
+- ✅ **Shift-click range selection:** Desktop app behavior for batch selection
 
 ## When Creating New Pages
 

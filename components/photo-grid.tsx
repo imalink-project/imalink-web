@@ -152,13 +152,14 @@ export function PhotoGrid({
   };
 
   const handlePhotoSelect = (hothash: string, shiftKey: boolean = false) => {
-    const currentIndex = photos.findIndex(p => p.hothash === hothash);
+    // Always use sorted photos for selection
+    const currentIndex = sortedPhotos.findIndex(p => p.hothash === hothash);
     
     if (shiftKey && lastSelectedIndex !== null && currentIndex !== -1) {
       // Shift+click: select range
       const start = Math.min(lastSelectedIndex, currentIndex);
       const end = Math.max(lastSelectedIndex, currentIndex);
-      const rangeHashes = photos.slice(start, end + 1)
+      const rangeHashes = sortedPhotos.slice(start, end + 1)
         .filter(p => !processedPhotos.has(p.hothash))
         .map(p => p.hothash);
       
@@ -246,6 +247,15 @@ export function PhotoGrid({
     hash => !processedPhotos.has(hash)
   );
 
+  // ALWAYS sort photos chronologically (newest first)
+  // PhotoGrid is a workspace for organizing, not an album
+  // Default: sort by date taken, newest first
+  const sortedPhotos = [...photos].sort((a, b) => {
+    const dateA = new Date(a.taken_at || a.created_at).getTime();
+    const dateB = new Date(b.taken_at || b.created_at).getTime();
+    return dateB - dateA; // Newest first (descending)
+  });
+
   // Group photos by date if enabled
   const groupedPhotos = () => {
     if (!groupByDate) return null;
@@ -255,7 +265,7 @@ export function PhotoGrid({
     let currentDate = '';
     let currentGroup: PhotoWithTags[] = [];
 
-    photos.forEach((photo) => {
+    sortedPhotos.forEach((photo) => {
       const photoDate = new Date(photo.taken_at || photo.created_at);
       const month = photoDate.toLocaleDateString('nb-NO', { year: 'numeric', month: 'long' });
       const date = photoDate.toLocaleDateString('nb-NO', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -314,7 +324,7 @@ export function PhotoGrid({
               </Select>
             </div>
             <p className="text-xs text-zinc-500">
-              Showing {photos.length.toLocaleString('nb-NO')} of {total.toLocaleString('nb-NO')}{totalIsApproximate ? '+' : ''}
+              Showing {photos.length.toLocaleString('nb-NO')} of {total.toLocaleString('nb-NO')}{totalIsApproximate ? '+' : ''} (sorted by date, newest first)
             </p>
           </div>
 
@@ -458,9 +468,9 @@ export function PhotoGrid({
           })}
         </div>
       ) : (
-        // Flat grid view
+        // Flat grid view - always sorted
         <div className={`grid gap-4 ${config.gridCols}`}>
-          {photos.map((photo) => (
+          {sortedPhotos.map((photo) => (
             <PhotoCard 
               key={photo.hothash} 
               photo={photo} 
