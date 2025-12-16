@@ -55,7 +55,6 @@ export function PhotoGrid({
   // Batch selection state
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
-  const [processedPhotos, setProcessedPhotos] = useState<Set<string>>(new Set());
   const [showAddToCollection, setShowAddToCollection] = useState(false);
   const [showAddToEvent, setShowAddToEvent] = useState(false);
   const [showSetAuthor, setShowSetAuthor] = useState(false);
@@ -153,7 +152,6 @@ export function PhotoGrid({
     // Reset selection when search params change
     setSelectionMode(false);
     setSelectedPhotos(new Set());
-    setProcessedPhotos(new Set());
   }, [searchParams]);
 
   const handleLoadMore = () => {
@@ -177,7 +175,6 @@ export function PhotoGrid({
       const start = Math.min(lastSelectedIndex, currentIndex);
       const end = Math.max(lastSelectedIndex, currentIndex);
       const rangeHashes = sortedPhotos.slice(start, end + 1)
-        .filter(p => !processedPhotos.has(p.hothash))
         .map(p => p.hothash);
       
       setSelectedPhotos((prev) => {
@@ -205,9 +202,8 @@ export function PhotoGrid({
   };
 
   const handleSelectAll = () => {
-    const unprocessedPhotos = photos.filter(p => !processedPhotos.has(p.hothash));
-    const allUnprocessedHashes = new Set(unprocessedPhotos.map(p => p.hothash));
-    setSelectedPhotos(allUnprocessedHashes);
+    const allHashes = new Set(photos.map(p => p.hothash));
+    setSelectedPhotos(allHashes);
   };
 
   const handleDeselectAll = () => {
@@ -215,15 +211,8 @@ export function PhotoGrid({
   };
 
   const handlePhotosAdded = () => {
-    // Mark selected photos as processed
-    setProcessedPhotos((prev) => {
-      const next = new Set(prev);
-      selectedPhotos.forEach(hash => next.add(hash));
-      return next;
-    });
-    // Clear selection
+    // Clear selection after operation
     setSelectedPhotos(new Set());
-    setShowAddToCollection(false);
   };
 
   const handlePhotoClick = (photo: PhotoWithTags) => {
@@ -278,10 +267,8 @@ export function PhotoGrid({
     );
   }
 
-  // Filter out only unprocessed photos for actions
-  const selectedUnprocessedPhotos = Array.from(selectedPhotos).filter(
-    hash => !processedPhotos.has(hash)
-  );
+  // Get array of selected photo hashes for actions
+  const selectedPhotoHashes = Array.from(selectedPhotos);
 
   // ALWAYS sort photos chronologically (newest first)
   // PhotoGrid is a workspace for organizing, not an album
@@ -405,11 +392,6 @@ export function PhotoGrid({
                   <Badge variant="secondary">
                     {selectedPhotos.size} selected
                   </Badge>
-                  {processedPhotos.size > 0 && (
-                    <Badge variant="outline" className="text-green-600">
-                      {processedPhotos.size} processed
-                    </Badge>
-                  )}
                 </>
               )}
             </>
@@ -493,7 +475,6 @@ export function PhotoGrid({
                       onClick={handlePhotoClick}
                       selectionMode={selectionMode}
                       isSelected={selectedPhotos.has(photo.hothash)}
-                      isProcessed={processedPhotos.has(photo.hothash)}
                       onSelect={handlePhotoSelect}
                       displaySize={displaySize}
                     />
@@ -513,7 +494,6 @@ export function PhotoGrid({
               onClick={handlePhotoClick}
               selectionMode={selectionMode}
               isSelected={selectedPhotos.has(photo.hothash)}
-              isProcessed={processedPhotos.has(photo.hothash)}
               onSelect={handlePhotoSelect}
               displaySize={displaySize}
             />
@@ -522,13 +502,13 @@ export function PhotoGrid({
       )}
 
       {/* Floating Action Bar */}
-      {selectionMode && selectedUnprocessedPhotos.length > 0 && (
+      {selectionMode && selectedPhotoHashes.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
           <div className="bg-card border-2 border-primary/20 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-3 backdrop-blur-sm">
             <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full">
               <CheckSquare className="h-4 w-4 text-primary" />
               <span className="font-semibold text-sm">
-                {selectedUnprocessedPhotos.length} valgt
+                {selectedPhotoHashes.length} valgt
               </span>
             </div>
             
@@ -637,7 +617,7 @@ export function PhotoGrid({
       <AddToCollectionDialog
         open={showAddToCollection}
         onOpenChange={setShowAddToCollection}
-        photoHothashes={selectedUnprocessedPhotos}
+        photoHothashes={selectedPhotoHashes}
         onPhotosAdded={handlePhotosAdded}
       />
 
@@ -645,7 +625,7 @@ export function PhotoGrid({
       <AddToEventDialog
         open={showAddToEvent}
         onOpenChange={setShowAddToEvent}
-        photoHothashes={selectedUnprocessedPhotos}
+        photoHothashes={selectedPhotoHashes}
         onPhotosAdded={handlePhotosAdded}
       />
 
@@ -653,7 +633,7 @@ export function PhotoGrid({
       <BatchSetAuthorDialog
         open={showSetAuthor}
         onOpenChange={setShowSetAuthor}
-        photoHothashes={selectedUnprocessedPhotos}
+        photoHothashes={selectedPhotoHashes}
         onPhotosUpdated={handlePhotosAdded}
       />
 
@@ -661,7 +641,7 @@ export function PhotoGrid({
       <BatchSetRatingDialog
         open={showSetRating}
         onOpenChange={setShowSetRating}
-        photoHothashes={selectedUnprocessedPhotos}
+        photoHothashes={selectedPhotoHashes}
         onPhotosUpdated={handlePhotosAdded}
       />
 

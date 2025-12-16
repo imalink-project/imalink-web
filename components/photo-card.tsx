@@ -19,7 +19,6 @@ interface PhotoCardProps {
   onClick?: (photo: PhotoWithTags) => void;
   selectionMode?: boolean;
   isSelected?: boolean;
-  isProcessed?: boolean;
   onSelect?: (hothash: string, shiftKey?: boolean) => void;
   displaySize?: PhotoDisplaySize;
 }
@@ -37,7 +36,6 @@ export function PhotoCard({
   onClick,
   selectionMode = false,
   isSelected = false,
-  isProcessed = false,
   onSelect,
   displaySize = 'medium',
 }: PhotoCardProps) {
@@ -72,11 +70,6 @@ export function PhotoCard({
   const displayName = photo.primary_filename || primaryFile?.filename || 'Unknown';
 
   const handleClick = (e: React.MouseEvent) => {
-    // Prevent interaction with processed photos in selection mode
-    if (isProcessed && selectionMode) {
-      return;
-    }
-    
     if (selectionMode && onSelect) {
       onSelect(photo.hothash, e.shiftKey);
     } else {
@@ -87,9 +80,7 @@ export function PhotoCard({
   const cardContent = (
     <div
       className={cn(
-        'group block overflow-hidden transition-all',
-        isProcessed && 'opacity-50 cursor-default',
-        !isProcessed && 'cursor-pointer hover:shadow-lg',
+        'group block overflow-hidden transition-all cursor-pointer hover:shadow-lg',
         isSelected && 'ring-2 ring-primary ring-offset-2'
       )}
       onClick={handleClick}
