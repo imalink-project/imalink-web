@@ -20,7 +20,7 @@ interface PhotoCardProps {
   selectionMode?: boolean;
   isSelected?: boolean;
   isProcessed?: boolean;
-  onSelect?: (hothash: string) => void;
+  onSelect?: (hothash: string, shiftKey?: boolean) => void;
   displaySize?: PhotoDisplaySize;
 }
 
@@ -71,14 +71,14 @@ export function PhotoCard({
   const primaryFile = photo.files?.[0] || photo.image_files?.[0];
   const displayName = photo.primary_filename || primaryFile?.filename || 'Unknown';
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
     // Prevent interaction with processed photos in selection mode
     if (isProcessed && selectionMode) {
       return;
     }
     
     if (selectionMode && onSelect) {
-      onSelect(photo.hothash);
+      onSelect(photo.hothash, e.shiftKey);
     } else {
       onClick?.(photo);
     }

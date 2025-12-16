@@ -47,6 +47,7 @@ export function PhotoGrid({
   const [processedPhotos, setProcessedPhotos] = useState<Set<string>>(new Set());
   const [showAddToCollection, setShowAddToCollection] = useState(false);
   const [showAddToEvent, setShowAddToEvent] = useState(false);
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
   
   // Use photo store for caching and display settings
   const { addPhotos, displaySize, setDisplaySize } = usePhotoStore();
@@ -150,16 +151,39 @@ export function PhotoGrid({
     }
   };
 
-  const handlePhotoSelect = (hothash: string) => {
-    setSelectedPhotos((prev) => {
-      const next = new Set(prev);
-      if (next.has(hothash)) {
-        next.delete(hothash);
-      } else {
-        next.add(hothash);
-      }
-      return next;
-    });
+  const handlePhotoSelect = (hothash: string, shiftKey: boolean = false) => {
+    const currentIndex = photos.findIndex(p => p.hothash === hothash);
+    
+    if (shiftKey && lastSelectedIndex !== null && currentIndex !== -1) {
+      // Shift+click: select range
+      const start = Math.min(lastSelectedIndex, currentIndex);
+      const end = Math.max(lastSelectedIndex, currentIndex);
+      const rangeHashes = photos.slice(start, end + 1)
+        .filter(p => !processedPhotos.has(p.hothash))
+        .map(p => p.hothash);
+      
+      setSelectedPhotos((prev) => {
+        const next = new Set(prev);
+        rangeHashes.forEach(hash => next.add(hash));
+        return next;
+      });
+    } else {
+      // Normal click: toggle single photo
+      setSelectedPhotos((prev) => {
+        const next = new Set(prev);
+        if (next.has(hothash)) {
+          next.delete(hothash);
+        } else {
+          next.add(hothash);
+        }
+        return next;
+      });
+    }
+    
+    // Update last selected index
+    if (currentIndex !== -1) {
+      setLastSelectedIndex(currentIndex);
+    }
   };
 
   const handleSelectAll = () => {
