@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Home, FolderOpen, Search, Package, User, PenLine, Calendar, Upload, CalendarDays } from 'lucide-react';
+import { Home, FolderOpen, Search, Package, User, PenLine, Calendar, Upload, CalendarDays, Camera } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AppLayoutProps {
@@ -53,6 +53,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       label: 'Events',
       href: '/events',
       icon: CalendarDays,
+    },
+    {
+      label: 'Fotografer',
+      href: '/photographers',
+      icon: Camera,
     },
     {
       label: 'Lagrede søk',

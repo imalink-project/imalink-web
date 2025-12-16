@@ -21,6 +21,8 @@ import type {
   PhotoTextDocumentCreate,
   PhotoTextDocumentUpdate,
   Author,
+  AuthorCreate,
+  AuthorUpdate,
   TimelineResponse,
   Event,
   EventWithPhotos,
@@ -361,37 +363,41 @@ class ApiClient {
     await this.handleResponse<void>(response);
   }
 
-  // Authors (Phase 1: Shared metadata tags)
-  async getAuthors(): Promise<{ authors: Author[] }> {
-    const response = await fetch(`${this.baseUrl}/authors/`, {
-      headers: this.getHeaders(), // Send auth if available, anonymous access supported
+  // Authors (Photographers) - Shared across users
+  async getAuthors(offset: number = 0, limit: number = 100): Promise<PaginatedResponse<Author>> {
+    const params = new URLSearchParams();
+    params.append('offset', offset.toString());
+    params.append('limit', limit.toString());
+    
+    const response = await fetch(`${this.baseUrl}/authors/?${params.toString()}`, {
+      headers: this.getHeaders(false), // Available to all users
     });
 
-    return this.handleResponse<{ authors: Author[] }>(response);
+    return this.handleResponse<PaginatedResponse<Author>>(response);
   }
 
   async getAuthor(id: number): Promise<Author> {
-    const response = await fetch(`${this.baseUrl}/authors/${id}/`, {
-      headers: this.getHeaders(), // Send auth if available, anonymous access supported
+    const response = await fetch(`${this.baseUrl}/authors/${id}`, {
+      headers: this.getHeaders(false), // Available to all users
     });
 
     return this.handleResponse<Author>(response);
   }
 
-  async createAuthor(data: { name: string; bio?: string }): Promise<Author> {
+  async createAuthor(data: { name: string; email?: string | null; bio?: string | null }): Promise<Author> {
     const response = await fetch(`${this.baseUrl}/authors/`, {
       method: 'POST',
-      headers: this.getHeaders(), // Auth required for POST
+      headers: this.getHeaders(),
       body: JSON.stringify(data),
     });
 
     return this.handleResponse<Author>(response);
   }
 
-  async updateAuthor(id: number, data: { name?: string; bio?: string }): Promise<Author> {
-    const response = await fetch(`${this.baseUrl}/authors/${id}/`, {
+  async updateAuthor(id: number, data: { name?: string | null; email?: string | null; bio?: string | null }): Promise<Author> {
+    const response = await fetch(`${this.baseUrl}/authors/${id}`, {
       method: 'PUT',
-      headers: this.getHeaders(), // Auth required for PUT
+      headers: this.getHeaders(),
       body: JSON.stringify(data),
     });
 
@@ -399,12 +405,12 @@ class ApiClient {
   }
 
   async deleteAuthor(id: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/authors/${id}/`, {
+    const response = await fetch(`${this.baseUrl}/authors/${id}`, {
       method: 'DELETE',
-      headers: this.getHeaders(), // Auth required for DELETE
+      headers: this.getHeaders(),
     });
 
-    if (response.status !== 204) {
+    if (response.status !== 200 && response.status !== 204) {
       await this.handleResponse<void>(response);
     }
   }

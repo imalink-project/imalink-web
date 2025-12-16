@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { VisibilitySelector } from '@/components/visibility-selector';
 import { X, MapPin, Calendar, Camera, Star } from 'lucide-react';
 import { VISIBILITY_LEVELS } from '@/lib/types';
+import { apiClient } from '@/lib/api-client';
+import type { Author } from '@/lib/types';
 
 interface PhotoMetadataEditorProps {
   schema: any;
@@ -29,6 +31,22 @@ export function PhotoMetadataEditor({
 }: PhotoMetadataEditorProps) {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
+  const [authors, setAuthors] = useState<Author[]>([]);
+  const [loadingAuthors, setLoadingAuthors] = useState(true);
+
+  useEffect(() => {
+    const loadAuthors = async () => {
+      try {
+        const response = await apiClient.getAuthors(0, 100);
+        setAuthors(response.data || []);
+      } catch (err) {
+        console.error('Failed to load authors:', err);
+      } finally {
+        setLoadingAuthors(false);
+      }
+    };
+    loadAuthors();
+  }, []);
 
   const handleAddTag = () => {
     const trimmedTag = tagInput.trim().toLowerCase();
@@ -139,6 +157,28 @@ export function PhotoMetadataEditor({
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Author (Photographer) */}
+            <div className="space-y-2">
+              <Label htmlFor="author">Fotograf</Label>
+              <Select
+                value={schema.author_id?.toString() || ''}
+                onValueChange={(value) => onUpdate({ author_id: value ? parseInt(value) : null })}
+                disabled={loadingAuthors}
+              >
+                <SelectTrigger id="author">
+                  <SelectValue placeholder={loadingAuthors ? "Laster fotografer..." : "Velg fotograf"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Ingen fotograf</SelectItem>
+                  {authors.map((author) => (
+                    <SelectItem key={author.id} value={author.id.toString()}>
+                      {author.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Category */}

@@ -54,9 +54,11 @@ export type SavedSearchUpdate = components['schemas']['SavedPhotoSearchUpdate'];
 export type PhotoStack = components['schemas']['PhotoStackDetail'];
 export type PhotoStackSummary = components['schemas']['PhotoStackSummary'];
 
-// Authors
+// Authors (Photographers)
 export type Author = components['schemas']['AuthorResponse'];
 export type AuthorSummary = components['schemas']['AuthorSummary'];
+export type AuthorCreate = components['schemas']['AuthorCreateRequest'];
+export type AuthorUpdate = components['schemas']['AuthorUpdateRequest'];
 
 // Import Sessions -> Input Channels
 export type InputChannel = components['schemas']['InputChannelResponse'];
