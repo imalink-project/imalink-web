@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
-import { Grid2X2, Grid3X3, LayoutGrid, List, CheckSquare, Square, FolderPlus, CalendarDays, X } from 'lucide-react';
+import { Grid2X2, Grid3X3, LayoutGrid, List, CheckSquare, Square, FolderPlus, CalendarDays, X, Calendar } from 'lucide-react';
 
 interface PhotoGridProps {
   searchParams?: ExtendedSearchParams;
@@ -39,6 +39,7 @@ export function PhotoGrid({
   const [limit, setLimit] = useState(500);
   const [total, setTotal] = useState<number>(0);
   const [totalIsApproximate, setTotalIsApproximate] = useState(false); // For collections without total count
+  const [groupByDate, setGroupByDate] = useState(false);
   
   // Batch selection state
   const [selectionMode, setSelectionMode] = useState(false);
@@ -221,6 +222,42 @@ export function PhotoGrid({
     hash => !processedPhotos.has(hash)
   );
 
+  // Group photos by date if enabled
+  const groupedPhotos = () => {
+    if (!groupByDate) return null;
+
+    const groups: { date: string; month: string; photos: PhotoWithTags[] }[] = [];
+    let currentMonth = '';
+    let currentDate = '';
+    let currentGroup: PhotoWithTags[] = [];
+
+    photos.forEach((photo) => {
+      const photoDate = new Date(photo.taken_at || photo.created_at);
+      const month = photoDate.toLocaleDateString('nb-NO', { year: 'numeric', month: 'long' });
+      const date = photoDate.toLocaleDateString('nb-NO', { year: 'numeric', month: 'long', day: 'numeric' });
+
+      if (date !== currentDate) {
+        if (currentGroup.length > 0) {
+          groups.push({ date: currentDate, month: currentMonth, photos: currentGroup });
+        }
+        currentDate = date;
+        currentMonth = month;
+        currentGroup = [photo];
+      } else {
+        currentGroup.push(photo);
+      }
+    });
+
+    // Push last group
+    if (currentGroup.length > 0) {
+      groups.push({ date: currentDate, month: currentMonth, photos: currentGroup });
+    }
+
+    return groups;
+  };
+
+  const photoGroups = groupedPhotos();
+
   return (
     <div className="space-y-4">
       {/* Toolbar with limit selector, batch operations and view selector */}
@@ -311,6 +348,18 @@ export function PhotoGrid({
 
         {showViewSelector && !selectionMode && (
           <div className="flex gap-2">
+          {/* Group by date toggle */}
+          <Button
+            variant={groupByDate ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setGroupByDate(!groupByDate)}
+            title="Group by date"
+          >
+            <Calendar className="h-4 w-4" />
+          </Button>
+          
+          {/* View size buttons */}
+          <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700" />
           <Button
             variant={displaySize === 'small' ? 'default' : 'outline'}
             size="sm"
@@ -343,20 +392,64 @@ export function PhotoGrid({
         )}
       </div>
 
-      <div className={`grid gap-4 ${config.gridCols}`}>
-        {photos.map((photo) => (
-          <PhotoCard 
-            key={photo.hothash} 
-            photo={photo} 
-            onClick={onPhotoClick}
-            selectionMode={selectionMode}
-            isSelected={selectedPhotos.has(photo.hothash)}
-            isProcessed={processedPhotos.has(photo.hothash)}
-            onSelect={handlePhotoSelect}
-            displaySize={displaySize}
-          />
-        ))}
-      </div>
+      {/* Photo grid - grouped or flat */}
+      {groupByDate && photoGroups ? (
+        // Grouped by date view
+        <div className="space-y-8">
+          {photoGroups.map((group, groupIndex) => {
+            const prevMonth = groupIndex > 0 ? photoGroups[groupIndex - 1].month : null;
+            const showMonthHeader = group.month !== prevMonth;
+
+            return (
+              <div key={group.date}>
+                {/* Month header (only when month changes) */}
+                {showMonthHeader && (
+                  <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
+                    {group.month}
+                  </h2>
+                )}
+                
+                {/* Day header */}
+                <h3 className="text-lg font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
+                  {group.date}
+                </h3>
+
+                {/* Photos for this day */}
+                <div className={`grid gap-4 ${config.gridCols}`}>
+                  {group.photos.map((photo) => (
+                    <PhotoCard 
+                      key={photo.hothash} 
+                      photo={photo} 
+                      onClick={onPhotoClick}
+                      selectionMode={selectionMode}
+                      isSelected={selectedPhotos.has(photo.hothash)}
+                      isProcessed={processedPhotos.has(photo.hothash)}
+                      onSelect={handlePhotoSelect}
+                      displaySize={displaySize}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        // Flat grid view
+        <div className={`grid gap-4 ${config.gridCols}`}>
+          {photos.map((photo) => (
+            <PhotoCard 
+              key={photo.hothash} 
+              photo={photo} 
+              onClick={onPhotoClick}
+              selectionMode={selectionMode}
+              isSelected={selectedPhotos.has(photo.hothash)}
+              isProcessed={processedPhotos.has(photo.hothash)}
+              onSelect={handlePhotoSelect}
+              displaySize={displaySize}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Floating Action Bar */}
       {selectionMode && selectedUnprocessedPhotos.length > 0 && (
