@@ -221,16 +221,27 @@ export function PhotoGrid({
           loadedCount += items.length;
           currentOffset = nextOffset;
           
+          // Update hasMore flag
+          setHasMore(loadedCount < total);
+          
         } catch (err) {
           console.error('Error loading chunk:', err);
           break;
         }
         
+        // Scroll to bottom to keep progress visible
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        
         // Small delay for UI update and cancellation check
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 150));
       }
       
       setLoadAllProgress({ loaded: loadedCount, total });
+      
+      // Final scroll to bottom
+      setTimeout(() => {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }, 200);
       
     } finally {
       setIsLoadingAll(false);
