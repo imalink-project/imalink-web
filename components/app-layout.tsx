@@ -77,7 +77,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   ];
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-full">
       {/* Sidebar Navigation */}
       <aside className="w-64 border-r bg-white dark:bg-zinc-900">
         <div className="flex h-full flex-col">
