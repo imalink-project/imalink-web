@@ -503,7 +503,7 @@ class ApiClient {
     return this.getCollection(id);
   }
 
-  async getCollectionPhotos(id: number, skip: number = 0, limit: number = 100): Promise<Photo[]> {
+  async getCollectionPhotos(id: number, skip: number = 0, limit: number = 100): Promise<{ data: Photo[]; total: number; offset: number; limit: number }> {
     const params = new URLSearchParams();
     params.append('skip', skip.toString());
     params.append('limit', limit.toString());
@@ -512,7 +512,7 @@ class ApiClient {
       headers: this.getHeaders(),
     });
 
-    return this.handleResponse<Photo[]>(response);
+    return this.handleResponse<{ data: Photo[]; total: number; offset: number; limit: number }>(response);
   }
 
   // Input Channels
