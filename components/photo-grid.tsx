@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
 import type { PhotoWithTags, ExtendedSearchParams } from '@/lib/types';
 import { usePhotoStore, PHOTO_DISPLAY_CONFIGS } from '@/lib/photo-store';
@@ -60,6 +60,11 @@ export function PhotoGrid({
   const [showSetAuthor, setShowSetAuthor] = useState(false);
   const [showSetRating, setShowSetRating] = useState(false);
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
+  
+  // Load all state
+  const [isLoadingAll, setIsLoadingAll] = useState(false);
+  const [loadAllProgress, setLoadAllProgress] = useState({ loaded: 0, total: 0 });
+  const cancelLoadAllRef = useRef(false);
   
   // Photo detail state
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoWithTags | null>(null);
@@ -159,6 +164,83 @@ export function PhotoGrid({
 
   const handleLoadMore = () => {
     loadPhotos(true);
+  };
+
+  const handleLoadAll = async () => {
+    if (isLoadingAll) return;
+    
+    setIsLoadingAll(true);
+    cancelLoadAllRef.current = false;
+    
+    try {
+      let currentOffset = offset;
+      let loadedCount = photos.length;
+      const chunkSize = limit;
+      
+      while (loadedCount < total) {
+        // Check for cancellation
+        if (cancelLoadAllRef.current) {
+          break;
+        }
+        
+        setLoadAllProgress({ loaded: loadedCount, total });
+        
+        // Calculate next chunk
+        const nextOffset = currentOffset + chunkSize;
+        const remainingItems = total - loadedCount;
+        const itemsToLoad = Math.min(chunkSize, remainingItems);
+        
+        // Load chunk directly using the same logic as loadPhotos
+        try {
+          let items: PhotoWithTags[];
+          
+          if (searchParams?.collection_id) {
+            const collectionPhotos = await apiClient.getCollectionPhotos(
+              searchParams.collection_id,
+              nextOffset,
+              chunkSize
+            );
+            items = collectionPhotos as PhotoWithTags[];
+          } else if (searchParams?.event_id) {
+            // For events, we load all at once, so just break
+            break;
+          } else {
+            const result = await apiClient.searchPhotos({ ...searchParams, offset: nextOffset, limit: chunkSize });
+            items = result.data as PhotoWithTags[];
+          }
+          
+          if (items.length === 0) {
+            break; // No more items
+          }
+          
+          // Append to photos
+          setPhotos((prev) => [...prev, ...items]);
+          setOffset(nextOffset);
+          
+          // Update counters
+          loadedCount += items.length;
+          currentOffset = nextOffset;
+          
+        } catch (err) {
+          console.error('Error loading chunk:', err);
+          break;
+        }
+        
+        // Small delay for UI update and cancellation check
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      setLoadAllProgress({ loaded: loadedCount, total });
+      
+    } finally {
+      setIsLoadingAll(false);
+      cancelLoadAllRef.current = false;
+      setLoadAllProgress({ loaded: 0, total: 0 });
+    }
+  };
+
+  const handleCancelLoadAll = () => {
+    cancelLoadAllRef.current = true;
   };
 
   const handleToggleSelectionMode = () => {
@@ -604,15 +686,59 @@ export function PhotoGrid({
       )}
 
       {hasMore && (
-        <div className="flex justify-center">
-          <Button
-            onClick={handleLoadMore}
-            disabled={loading}
-            variant="outline"
-            size="lg"
-          >
-            {loading ? 'Loading...' : 'Load More'}
-          </Button>
+        <div className="space-y-4">
+          {/* Load All Progress */}
+          {isLoadingAll && (
+            <div className="flex flex-col items-center gap-3 p-6 bg-card border rounded-lg shadow-sm">
+              <div className="w-full max-w-md space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">Laster alle bilder...</span>
+                  <span className="text-muted-foreground">
+                    {loadAllProgress.loaded.toLocaleString('nb-NO')} / {loadAllProgress.total.toLocaleString('nb-NO')}
+                  </span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${(loadAllProgress.loaded / loadAllProgress.total) * 100}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  {Math.round((loadAllProgress.loaded / loadAllProgress.total) * 100)}% fullført
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancelLoadAll}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Avbryt
+              </Button>
+            </div>
+          )}
+          
+          {/* Load More / Load All buttons */}
+          {!isLoadingAll && (
+            <div className="flex justify-center gap-3">
+              <Button
+                onClick={handleLoadMore}
+                disabled={loading}
+                variant="outline"
+                size="lg"
+              >
+                {loading ? 'Loading...' : 'Load More'}
+              </Button>
+              <Button
+                onClick={handleLoadAll}
+                disabled={loading}
+                variant="default"
+                size="lg"
+              >
+                Load All ({(total - photos.length).toLocaleString('nb-NO')} remaining)
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
