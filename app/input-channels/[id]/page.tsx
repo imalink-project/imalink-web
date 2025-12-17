@@ -84,19 +84,30 @@ export default function InputChannelDetailPage() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Fixed header */}
-      <div className="flex-shrink-0 border-b bg-background px-4 py-4">
-        <Button
-          variant="ghost"
-          onClick={() => router.push('/input-channels')}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Tilbake til kanaler
-        </Button>
+      {/* Compact fixed toolbar */}
+      <div className="flex-shrink-0 border-b bg-background px-4 py-2">
+        <div className="flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push('/input-channels')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Tilbake til kanaler
+          </Button>
+          
+          <Button onClick={() => setEditDialogOpen(true)} variant="outline" size="sm">
+            <Pencil className="h-4 w-4 mr-2" />
+            Rediger
+          </Button>
+        </div>
+      </div>
 
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
+      {/* Scrollable content with header */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-4 py-6">
+          {/* Channel header */}
+          <div className="mb-6">
             <h1 className="text-3xl font-bold mb-2">
               {channel.title || `Kanal #${channel.id}`}
             </h1>
@@ -116,26 +127,21 @@ export default function InputChannelDetailPage() {
             </div>
           </div>
 
-          <Button onClick={() => setEditDialogOpen(true)} variant="outline">
-            <Pencil className="h-4 w-4 mr-2" />
-            Rediger
-          </Button>
+          {/* Photos */}
+          {loading ? (
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
+            </div>
+          ) : (
+            <div className="h-[calc(100vh-300px)]">
+              <PhotoGrid
+                searchParams={{ input_channel_id: channelId }}
+                onPhotoClick={handlePhotoClick}
+                enableBatchOperations={true}
+              />
+            </div>
+          )}
         </div>
-      </div>
-
-      {/* Scrollable photos */}
-      <div className="flex-1 overflow-hidden px-4 py-6">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
-          </div>
-        ) : (
-          <PhotoGrid
-            searchParams={{ input_channel_id: channelId }}
-            onPhotoClick={handlePhotoClick}
-            enableBatchOperations={true}
-          />
-        )}
       </div>
 
       {/* Dialogs */}

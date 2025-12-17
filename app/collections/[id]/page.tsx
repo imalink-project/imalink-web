@@ -180,18 +180,22 @@ export default function CollectionDetailPage() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Fixed header */}
-      <div className="flex-shrink-0 border-b bg-background px-4 py-4">
+      {/* Compact fixed toolbar */}
+      <div className="flex-shrink-0 border-b bg-background px-4 py-2">
         <Button
           variant="ghost"
+          size="sm"
           onClick={handleBack}
-          className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Tilbake til samlinger
         </Button>
+      </div>
 
-        {isEditing ? (
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-4 py-6\">
+          {isEditing ? (
           <div className="space-y-4">
             <div>
               <Label htmlFor="edit-name">Navn</Label>
@@ -260,16 +264,17 @@ export default function CollectionDetailPage() {
             </div>
           </div>
         )}
-      </div>
 
-      {/* Scrollable photos grid */}
-      <div className="flex-1 overflow-hidden px-4 py-6">
-        <PhotoGrid
-          key={refreshKey}
-          searchParams={{ collection_id: collectionId }}
-          onPhotoClick={handlePhotoClick}
-          enableBatchOperations={false}
-        />
+        {/* Photos grid */}
+        <div className="mt-6 h-[calc(100vh-400px)]">
+          <PhotoGrid
+            key={refreshKey}
+            searchParams={{ collection_id: collectionId }}
+            onPhotoClick={handlePhotoClick}
+            enableBatchOperations={false}
+          />
+        </div>
+        </div>
       </div>
 
       {/* Delete confirmation dialog */}

@@ -156,26 +156,24 @@ export default function EventDetailPage() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Fixed header */}
-      <div className="flex-shrink-0 border-b bg-background px-4 py-4">
-        {/* Breadcrumb */}
-        <div className="mb-6">
-          <EventBreadcrumb eventId={eventId} currentEventName={event.name} />
-        </div>
-
-        {/* Header with back button */}
-        <div className="mb-6 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Tilbake
-          </Button>
+      {/* Compact fixed toolbar */}
+      <div className="flex-shrink-0 border-b bg-background px-4 py-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.back()}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Tilbake
+            </Button>
+            <EventBreadcrumb eventId={eventId} currentEventName={event.name} />
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="sm">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -199,29 +197,28 @@ export default function EventDetailPage() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-
-        {/* Event Header */}
-        <div className="rounded-lg border bg-card p-6">
-          <h1 className="mb-2 text-3xl font-bold">{event.name}</h1>
-          
-          {event.description && (
-            <p className="mb-4 text-muted-foreground">{event.description}</p>
-          )}
-
-          <div className="flex flex-wrap gap-4 text-sm">
-            {event.location_name && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                <span>{event.location_name}</span>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto">
         <div className="px-4 py-6 space-y-6">
+          {/* Event Header */}
+          <div className="rounded-lg border bg-card p-6">
+            <h1 className="mb-2 text-3xl font-bold">{event.name}</h1>
+            
+            {event.description && (
+              <p className="mb-4 text-muted-foreground">{event.description}</p>
+            )}
+
+            <div className="flex flex-wrap gap-4 text-sm">
+              {event.location_name && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  <span>{event.location_name}</span>
+                </div>
+              )}
+            </div>
+          </div>
           {/* Child Events */}
           {childEvents.length > 0 && (
             <div>
