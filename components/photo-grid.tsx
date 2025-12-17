@@ -229,11 +229,8 @@ export function PhotoGrid({
           break;
         }
         
-        // Scroll to bottom to keep progress visible
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-        
         // Small delay for UI update and cancellation check
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
       
       setLoadAllProgress({ loaded: loadedCount, total });
@@ -540,6 +537,64 @@ export function PhotoGrid({
         )}
       </div>
 
+      {/* Load More / Load All buttons - sticky at top */}
+      {hasMore && (
+        <div className="sticky top-0 z-10 bg-background pb-2">
+          {/* Load All Progress */}
+          {isLoadingAll && (
+            <div className="flex flex-col items-center gap-3 p-6 bg-card border rounded-lg shadow-sm">
+              <div className="w-full max-w-md space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">Laster alle bilder...</span>
+                  <span className="text-muted-foreground">
+                    {loadAllProgress.loaded.toLocaleString('nb-NO')} / {loadAllProgress.total.toLocaleString('nb-NO')}
+                  </span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${(loadAllProgress.loaded / loadAllProgress.total) * 100}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  {Math.round((loadAllProgress.loaded / loadAllProgress.total) * 100)}% fullført
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancelLoadAll}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Avbryt
+              </Button>
+            </div>
+          )}
+          
+          {/* Load More / Load All buttons */}
+          {!isLoadingAll && (
+            <div className="flex justify-center gap-3">
+              <Button
+                onClick={handleLoadMore}
+                disabled={loading}
+                variant="outline"
+                size="lg"
+              >
+                {loading ? 'Loading...' : 'Load More'}
+              </Button>
+              <Button
+                onClick={handleLoadAll}
+                disabled={loading}
+                variant="default"
+                size="lg"
+              >
+                Load All ({(total - photos.length).toLocaleString('nb-NO')} remaining)
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Photo grid - grouped or flat */}
       {groupByDate && photoGroups ? (
         // Grouped by date view
@@ -693,63 +748,6 @@ export function PhotoGrid({
               <X className="h-4 w-4" />
             </Button>
           </div>
-        </div>
-      )}
-
-      {hasMore && (
-        <div className="space-y-4">
-          {/* Load All Progress */}
-          {isLoadingAll && (
-            <div className="flex flex-col items-center gap-3 p-6 bg-card border rounded-lg shadow-sm">
-              <div className="w-full max-w-md space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Laster alle bilder...</span>
-                  <span className="text-muted-foreground">
-                    {loadAllProgress.loaded.toLocaleString('nb-NO')} / {loadAllProgress.total.toLocaleString('nb-NO')}
-                  </span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary transition-all duration-300"
-                    style={{ width: `${(loadAllProgress.loaded / loadAllProgress.total) * 100}%` }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  {Math.round((loadAllProgress.loaded / loadAllProgress.total) * 100)}% fullført
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCancelLoadAll}
-              >
-                <X className="mr-2 h-4 w-4" />
-                Avbryt
-              </Button>
-            </div>
-          )}
-          
-          {/* Load More / Load All buttons */}
-          {!isLoadingAll && (
-            <div className="flex justify-center gap-3">
-              <Button
-                onClick={handleLoadMore}
-                disabled={loading}
-                variant="outline"
-                size="lg"
-              >
-                {loading ? 'Loading...' : 'Load More'}
-              </Button>
-              <Button
-                onClick={handleLoadAll}
-                disabled={loading}
-                variant="default"
-                size="lg"
-              >
-                Load All ({(total - photos.length).toLocaleString('nb-NO')} remaining)
-              </Button>
-            </div>
-          )}
         </div>
       )}
 
