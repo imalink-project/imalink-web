@@ -146,13 +146,16 @@ export function PhotoGrid({
     }
   };
 
+  // Create a stable key from searchParams to avoid unnecessary reloads
+  const searchParamsKey = JSON.stringify(searchParams || {});
+
   useEffect(() => {
     setOffset(0);
     loadPhotos(false);
     // Reset selection when search params change
     setSelectionMode(false);
     setSelectedPhotos(new Set());
-  }, [searchParams]);
+  }, [searchParamsKey]);
 
   const handleLoadMore = () => {
     loadPhotos(true);
