@@ -406,38 +406,36 @@ export function PhotoGrid({
   return (
     <div className="flex flex-col h-full">
       {/* Fixed toolbar - never scrolls */}
-      <div className="flex-shrink-0 bg-background pb-4 border-b">
-        <div className="flex items-center justify-between gap-4 mb-4">
+      <div className="flex-shrink-0 bg-background py-2 border-b">
+        <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          {/* Limit selector and total count */}
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-zinc-600 dark:text-zinc-400">Show:</span>
-              <Select
-                value={limit.toString()}
-                onValueChange={(value) => {
-                  setLimit(Number(value));
-                  setOffset(0);
-                  setPhotos([]);
-                  loadPhotos(false);
-                }}
-              >
-                <SelectTrigger className="w-[100px] h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30">30</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                  <SelectItem value="200">200</SelectItem>
-                  <SelectItem value="500">500</SelectItem>
-                  <SelectItem value="1000">1000</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <p className="text-xs text-zinc-500">
-              Showing {photos.length.toLocaleString('nb-NO')} of {total.toLocaleString('nb-NO')}{totalIsApproximate ? '+' : ''} (sorted by date, newest first)
-            </p>
+          {/* Limit selector and photo count */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-zinc-600 dark:text-zinc-400">Show:</span>
+            <Select
+              value={limit.toString()}
+              onValueChange={(value) => {
+                setLimit(Number(value));
+                setOffset(0);
+                setPhotos([]);
+                loadPhotos(false);
+              }}
+            >
+              <SelectTrigger className="w-[100px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30">30</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+                <SelectItem value="200">200</SelectItem>
+                <SelectItem value="500">500</SelectItem>
+                <SelectItem value="1000">1000</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-zinc-500">
+              {photos.length.toLocaleString('nb-NO')} / {total.toLocaleString('nb-NO')}{totalIsApproximate ? '+' : ''}
+            </span>
           </div>
 
           {/* Batch operations */}
@@ -531,66 +529,59 @@ export function PhotoGrid({
           </Button>
         </div>
         )}
-        </div>
 
-        {/* Load More / Load All buttons */}
-        {hasMore && (
-          <div className="mt-4">
-            {/* Load All Progress */}
-            {isLoadingAll && (
-            <div className="flex flex-col items-center gap-3 p-6 bg-card border rounded-lg shadow-sm">
-              <div className="w-full max-w-md space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Laster alle bilder...</span>
-                  <span className="text-muted-foreground">
-                    {loadAllProgress.loaded.toLocaleString('nb-NO')} / {loadAllProgress.total.toLocaleString('nb-NO')}
-                  </span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary transition-all duration-300"
-                    style={{ width: `${(loadAllProgress.loaded / loadAllProgress.total) * 100}%` }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  {Math.round((loadAllProgress.loaded / loadAllProgress.total) * 100)}% fullført
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCancelLoadAll}
-              >
-                <X className="mr-2 h-4 w-4" />
-                Avbryt
-              </Button>
-            </div>
-          )}
-          
-          {/* Load More / Load All buttons */}
-          {!isLoadingAll && (
-            <div className="flex justify-center gap-3">
-              <Button
-                onClick={handleLoadMore}
-                disabled={loading}
-                variant="outline"
-                size="lg"
-              >
-                {loading ? 'Loading...' : 'Load More'}
-              </Button>
-              <Button
-                onClick={handleLoadAll}
-                disabled={loading}
-                variant="default"
-                size="lg"
-              >
-                Load All ({(total - photos.length).toLocaleString('nb-NO')} remaining)
-              </Button>
-            </div>
-          )}
+        {/* Load More / Load All buttons - inline */}
+        {hasMore && !isLoadingAll && (
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleLoadMore}
+              disabled={loading}
+              variant="outline"
+              size="sm"
+            >
+              {loading ? 'Loading...' : 'Load More'}
+            </Button>
+            <Button
+              onClick={handleLoadAll}
+              disabled={loading}
+              variant="default"
+              size="sm"
+            >
+              Load All ({(total - photos.length).toLocaleString('nb-NO')} remaining)
+            </Button>
           </div>
         )}
+        </div>
       </div>
+
+      {/* Progress bar below toolbar */}
+      {isLoadingAll && (
+        <div className="flex-shrink-0 px-4 py-3 border-b bg-muted/30">
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="font-medium">Laster alle bilder...</span>
+                <span className="text-muted-foreground">
+                  {loadAllProgress.loaded.toLocaleString('nb-NO')} / {loadAllProgress.total.toLocaleString('nb-NO')}
+                </span>
+              </div>
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${(loadAllProgress.loaded / loadAllProgress.total) * 100}%` }}
+                />
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCancelLoadAll}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Scrollable photo area */}
       <div className="flex-1 overflow-y-auto">
