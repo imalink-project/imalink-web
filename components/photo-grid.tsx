@@ -235,11 +235,6 @@ export function PhotoGrid({
       
       setLoadAllProgress({ loaded: loadedCount, total });
       
-      // Final scroll to bottom
-      setTimeout(() => {
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-      }, 200);
-      
     } finally {
       setIsLoadingAll(false);
       cancelLoadAllRef.current = false;
@@ -410,8 +405,9 @@ export function PhotoGrid({
 
   return (
     <div className="space-y-4">
-      {/* Toolbar with limit selector, batch operations and view selector */}
-      <div className="flex items-center justify-between gap-4">
+      {/* Toolbar with limit selector, batch operations and view selector - sticky */}
+      <div className="sticky top-0 z-20 bg-background pb-4 pt-2 border-b">
+      <div className="flex items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-4">
           {/* Limit selector and total count */}
           <div className="flex flex-col gap-1">
@@ -537,9 +533,9 @@ export function PhotoGrid({
         )}
       </div>
 
-      {/* Load More / Load All buttons - sticky at top */}
+      {/* Load More / Load All buttons */}
       {hasMore && (
-        <div className="sticky top-0 z-10 bg-background pb-2">
+        <div>
           {/* Load All Progress */}
           {isLoadingAll && (
             <div className="flex flex-col items-center gap-3 p-6 bg-card border rounded-lg shadow-sm">
@@ -594,6 +590,7 @@ export function PhotoGrid({
           )}
         </div>
       )}
+      </div>
 
       {/* Photo grid - grouped or flat */}
       {groupByDate && photoGroups ? (
