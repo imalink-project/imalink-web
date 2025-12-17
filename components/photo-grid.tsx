@@ -404,9 +404,9 @@ export function PhotoGrid({
   const photoGroups = groupedPhotos();
 
   return (
-    <div className="space-y-4">
-      {/* Sticky toolbar - stays at top when scrolling */}
-      <div className="sticky top-0 z-20 bg-background pb-4 border-b -mx-4 px-4 -mt-2 pt-2">
+    <div className="flex flex-col h-full">
+      {/* Fixed toolbar - never scrolls */}
+      <div className="flex-shrink-0 bg-background pb-4 border-b">
         <div className="flex items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-4">
           {/* Limit selector and total count */}
@@ -533,9 +533,9 @@ export function PhotoGrid({
         )}
         </div>
 
-        {/* Load More / Load All buttons - within sticky area */}
+        {/* Load More / Load All buttons */}
         {hasMore && (
-          <div className="mt-4 pt-4 border-t">
+          <div className="mt-4">
             {/* Load All Progress */}
             {isLoadingAll && (
             <div className="flex flex-col items-center gap-3 p-6 bg-card border rounded-lg shadow-sm">
@@ -592,7 +592,9 @@ export function PhotoGrid({
         )}
       </div>
 
-      {/* Photo grid - grouped or flat */}
+      {/* Scrollable photo area */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Photo grid - grouped or flat */}
       {groupByDate && photoGroups ? (
         // Grouped by date view
         <div className="space-y-8">
@@ -648,6 +650,7 @@ export function PhotoGrid({
           ))}
         </div>
       )}
+      </div>
 
       {/* Floating Action Bar */}
       {selectionMode && selectedPhotoHashes.length > 0 && (

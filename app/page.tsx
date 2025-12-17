@@ -57,27 +57,31 @@ export default function Home() {
 
   return (
     <>
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
+      <div className="flex flex-col h-full">
+        {/* Fixed header */}
+        <div className="flex-shrink-0 border-b bg-background px-4 py-4">
           <h1 className="text-3xl font-bold">Bildegalleri</h1>
           <p className="mt-2 text-muted-foreground">
             Utforsk og administrer bildene dine
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
-          {/* Sidebar with filters */}
-          <aside className="space-y-4">
-            <SearchFilters onSearchChange={handleSearchChange} />
-          </aside>
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-hidden">
+          <div className="grid h-full gap-6 lg:grid-cols-[300px_1fr]">
+            {/* Sidebar with filters */}
+            <aside className="overflow-y-auto px-4 py-6 space-y-4">
+              <SearchFilters onSearchChange={handleSearchChange} />
+            </aside>
 
-          {/* Photo Grid */}
-          <div>
-            <PhotoGrid
-              searchParams={searchParams}
-              onPhotoClick={handlePhotoClick}
-              enableBatchOperations={true}
-            />
+            {/* Photo Grid - manages its own scroll */}
+            <div className="h-full px-4 py-6">
+              <PhotoGrid
+                searchParams={searchParams}
+                onPhotoClick={handlePhotoClick}
+                enableBatchOperations={true}
+              />
+            </div>
           </div>
         </div>
       </div>

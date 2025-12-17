@@ -155,8 +155,10 @@ export default function EventDetailPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumb */}
+    <div className="flex flex-col h-full">
+      {/* Fixed header */}
+      <div className="flex-shrink-0 border-b bg-background px-4 py-4">
+        {/* Breadcrumb */}
         <div className="mb-6">
           <EventBreadcrumb eventId={eventId} currentEventName={event.name} />
         </div>
@@ -199,7 +201,7 @@ export default function EventDetailPage() {
         </div>
 
         {/* Event Header */}
-        <div className="mb-8 rounded-lg border bg-card p-6">
+        <div className="rounded-lg border bg-card p-6">
           <h1 className="mb-2 text-3xl font-bold">{event.name}</h1>
           
           {event.description && (
@@ -215,10 +217,14 @@ export default function EventDetailPage() {
             )}
           </div>
         </div>
+      </div>
 
-        {/* Child Events */}
-        {childEvents.length > 0 && (
-          <div className="mb-8">
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-4 py-6 space-y-6">
+          {/* Child Events */}
+          {childEvents.length > 0 && (
+            <div>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold flex items-center gap-2">
                 <FolderTree className="h-5 w-5" />
@@ -257,32 +263,34 @@ export default function EventDetailPage() {
           </div>
         )}
 
-        {/* Photos Section */}
-        <div>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Bilder</h2>
-            
-            {childEvents.length > 0 && (
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includeDescendants}
-                  onChange={(e) => setIncludeDescendants(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300"
-                />
-                <span>Inkluder bilder fra under-events</span>
-              </label>
-            )}
+          {/* Photos Section */}
+          <div className="h-[600px]">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Bilder</h2>
+              
+              {childEvents.length > 0 && (
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={includeDescendants}
+                    onChange={(e) => setIncludeDescendants(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <span>Inkluder bilder fra under-events</span>
+                </label>
+              )}
+            </div>
+
+            <PhotoGrid 
+              searchParams={{ event_id: eventId, include_descendants: includeDescendants }}
+              showViewSelector={true}
+              enableBatchOperations={false}
+            />
           </div>
-
-          <PhotoGrid 
-            searchParams={{ event_id: eventId, include_descendants: includeDescendants }}
-            showViewSelector={true}
-            enableBatchOperations={false}
-          />
         </div>
+      </div>
 
-        {/* Create child event dialog */}
+      {/* Create child event dialog */}
         <CreateEventDialog
           open={showCreateChildDialog}
           onOpenChange={setShowCreateChildDialog}

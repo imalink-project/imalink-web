@@ -83,9 +83,9 @@ export default function InputChannelDetailPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      {/* Header */}
-      <div className="mb-8">
+    <div className="flex flex-col h-full">
+      {/* Fixed header */}
+      <div className="flex-shrink-0 border-b bg-background px-4 py-4">
         <Button
           variant="ghost"
           onClick={() => router.push('/input-channels')}
@@ -123,18 +123,20 @@ export default function InputChannelDetailPage() {
         </div>
       </div>
 
-      {/* Photos */}
-      {loading ? (
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
-        </div>
-      ) : (
-        <PhotoGrid
-          searchParams={{ input_channel_id: channelId }}
-          onPhotoClick={handlePhotoClick}
-          enableBatchOperations={true}
-        />
-      )}
+      {/* Scrollable photos */}
+      <div className="flex-1 overflow-hidden px-4 py-6">
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
+          </div>
+        ) : (
+          <PhotoGrid
+            searchParams={{ input_channel_id: channelId }}
+            onPhotoClick={handlePhotoClick}
+            enableBatchOperations={true}
+          />
+        )}
+      </div>
 
       {/* Dialogs */}
       <EditInputChannelDialog

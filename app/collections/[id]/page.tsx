@@ -179,17 +179,17 @@ export default function CollectionDetailPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={handleBack}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Tilbake til samlinger
-          </Button>
+    <div className="flex flex-col h-full">
+      {/* Fixed header */}
+      <div className="flex-shrink-0 border-b bg-background px-4 py-4">
+        <Button
+          variant="ghost"
+          onClick={handleBack}
+          className="mb-4"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Tilbake til samlinger
+        </Button>
 
         {isEditing ? (
           <div className="space-y-4">
@@ -262,13 +262,15 @@ export default function CollectionDetailPage() {
         )}
       </div>
 
-      {/* Photos grid */}
-      <PhotoGrid
-        key={refreshKey}
-        searchParams={{ collection_id: collectionId }}
-        onPhotoClick={handlePhotoClick}
-        enableBatchOperations={false}
-      />
+      {/* Scrollable photos grid */}
+      <div className="flex-1 overflow-hidden px-4 py-6">
+        <PhotoGrid
+          key={refreshKey}
+          searchParams={{ collection_id: collectionId }}
+          onPhotoClick={handlePhotoClick}
+          enableBatchOperations={false}
+        />
+      </div>
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
