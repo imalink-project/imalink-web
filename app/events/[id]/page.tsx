@@ -204,7 +204,7 @@ export default function EventDetailPage() {
         <PhotoGrid 
           searchParams={{ event_id: eventId, include_descendants: includeDescendants }}
           showViewSelector={true}
-          enableBatchOperations={false}
+          enableBatchOperations={true}
           headerContent={
             <div className="space-y-6">
               {/* Event Header */}

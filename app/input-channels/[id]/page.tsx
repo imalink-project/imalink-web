@@ -103,46 +103,43 @@ export default function InputChannelDetailPage() {
         </div>
       </div>
 
-      {/* Scrollable content with header */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 py-6">
-          {/* Channel header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2">
-              {channel.title || `Kanal #${channel.id}`}
-            </h1>
-            {channel.description && (
-              <p className="text-muted-foreground mb-4">{channel.description}</p>
-            )}
-
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span>{formatDate(channel.imported_at)}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <ImageIcon className="h-4 w-4" />
-                <span>{channel.images_count} bilder</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Photos */}
-          {loading ? (
-            <div className="flex items-center justify-center min-h-[400px]">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
-            </div>
-          ) : (
-            <div className="h-[calc(100vh-300px)]">
-              <PhotoGrid
-                searchParams={{ input_channel_id: channelId }}
-                onPhotoClick={handlePhotoClick}
-                enableBatchOperations={true}
-              />
-            </div>
-          )}
+      {/* PhotoGrid takes full remaining height */}
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
         </div>
-      </div>
+      ) : (
+        <div className="flex-1 overflow-hidden px-4">
+          <PhotoGrid
+            searchParams={{ input_channel_id: channelId }}
+            onPhotoClick={handlePhotoClick}
+            enableBatchOperations={true}
+            headerContent={
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold mb-2">
+                  {channel.title || `Kanal #${channel.id}`}
+                </h1>
+                {channel.description && (
+                  <p className="text-muted-foreground mb-4">{channel.description}</p>
+                )}
+
+                <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span>{formatDate(channel.imported_at)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" />
+                    <span>{channel.images_count} bilder</span>
+                  </div>
+                </div>
+
+                <h2 className="text-xl font-semibold mt-6">Bilder</h2>
+              </div>
+            }
+          />
+        </div>
+      )}
 
       {/* Dialogs */}
       <EditInputChannelDialog

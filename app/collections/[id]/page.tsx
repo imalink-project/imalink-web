@@ -192,89 +192,89 @@ export default function CollectionDetailPage() {
         </Button>
       </div>
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 py-6\">
-          {isEditing ? (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-name">Navn</Label>
-              <Input
-                id="edit-name"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                maxLength={255}
-                disabled={saving}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="edit-description">Beskrivelse</Label>
-              <textarea
-                id="edit-description"
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                disabled={saving}
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button onClick={handleSave} disabled={saving || !editName.trim()}>
-                <Save className="mr-2 h-4 w-4" />
-                {saving ? 'Lagrer...' : 'Lagre'}
-              </Button>
-              <Button variant="outline" onClick={handleCancelEdit} disabled={saving}>
-                <X className="mr-2 h-4 w-4" />
-                Avbryt
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold">{collection.name}</h1>
-                {collection.description && (
-                  <p className="mt-2 text-muted-foreground">{collection.description}</p>
-                )}
-                
-                <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <ImageIcon className="h-4 w-4" />
-                    <span>{collection.photo_count} {collection.photo_count === 1 ? 'bilde' : 'bilder'}</span>
+      {/* PhotoGrid takes full remaining height */}
+      <div className="flex-1 overflow-hidden px-4">
+        <PhotoGrid
+          key={refreshKey}
+          searchParams={{ collection_id: collectionId }}
+          onPhotoClick={handlePhotoClick}
+          enableBatchOperations={true}
+          headerContent={
+            <div className="space-y-6">
+              {isEditing ? (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="edit-name">Navn</Label>
+                    <Input
+                      id="edit-name"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      maxLength={255}
+                      disabled={saving}
+                    />
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    <span>Opprettet {formatDate(collection.created_at)}</span>
+                  
+                  <div>
+                    <Label htmlFor="edit-description">Beskrivelse</Label>
+                    <textarea
+                      id="edit-description"
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      disabled={saving}
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button onClick={handleSave} disabled={saving || !editName.trim()}>
+                      <Save className="mr-2 h-4 w-4" />
+                      {saving ? 'Lagrer...' : 'Lagre'}
+                    </Button>
+                    <Button variant="outline" onClick={handleCancelEdit} disabled={saving}>
+                      <X className="mr-2 h-4 w-4" />
+                      Avbryt
+                    </Button>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h1 className="text-3xl font-bold">{collection.name}</h1>
+                      {collection.description && (
+                        <p className="mt-2 text-muted-foreground">{collection.description}</p>
+                      )}
+                      
+                      <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <ImageIcon className="h-4 w-4" />
+                          <span>{collection.photo_count} {collection.photo_count === 1 ? 'bilde' : 'bilder'}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>Opprettet {formatDate(collection.created_at)}</span>
+                        </div>
+                      </div>
+                    </div>
 
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setIsEditing(true)}>
-                  <Edit2 className="mr-2 h-4 w-4" />
-                  Rediger
-                </Button>
-                <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Slett
-                </Button>
-              </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={() => setIsEditing(true)}>
+                        <Edit2 className="mr-2 h-4 w-4" />
+                        Rediger
+                      </Button>
+                      <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Slett
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <h2 className="text-xl font-semibold">Bilder</h2>
             </div>
-          </div>
-        )}
-
-        {/* Photos grid */}
-        <div className="mt-6 h-[calc(100vh-400px)]">
-          <PhotoGrid
-            key={refreshKey}
-            searchParams={{ collection_id: collectionId }}
-            onPhotoClick={handlePhotoClick}
-            enableBatchOperations={false}
-          />
-        </div>
-        </div>
+          }
+        />
       </div>
 
       {/* Delete confirmation dialog */}
