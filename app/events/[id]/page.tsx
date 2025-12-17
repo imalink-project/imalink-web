@@ -199,92 +199,92 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 py-6 space-y-6">
-          {/* Event Header */}
-          <div className="rounded-lg border bg-card p-6">
-            <h1 className="mb-2 text-3xl font-bold">{event.name}</h1>
-            
-            {event.description && (
-              <p className="mb-4 text-muted-foreground">{event.description}</p>
-            )}
+      {/* PhotoGrid takes full remaining height */}
+      <div className="flex-1 overflow-hidden px-4">
+        <PhotoGrid 
+          searchParams={{ event_id: eventId, include_descendants: includeDescendants }}
+          showViewSelector={true}
+          enableBatchOperations={false}
+          headerContent={
+            <div className="space-y-6">
+              {/* Event Header */}
+              <div className="rounded-lg border bg-card p-6">
+                <h1 className="mb-2 text-3xl font-bold">{event.name}</h1>
+                
+                {event.description && (
+                  <p className="mb-4 text-muted-foreground">{event.description}</p>
+                )}
 
-            <div className="flex flex-wrap gap-4 text-sm">
-              {event.location_name && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  <span>{event.location_name}</span>
-                </div>
-              )}
-            </div>
-          </div>
-          {/* Child Events */}
-          {childEvents.length > 0 && (
-            <div>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <FolderTree className="h-5 w-5" />
-                Under-events
-              </h2>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowCreateChildDialog(true)}
-              >
-                <Plus className="mr-2 h-3 w-3" />
-                Legg til under-event
-              </Button>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {childEvents.map((child) => (
-                <div
-                  key={child.id}
-                  onClick={() => router.push(`/events/${child.id}`)}
-                  className="cursor-pointer rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
-                >
-                  <h3 className="font-semibold">{child.name}</h3>
-                  {child.description && (
-                    <p className="mt-1 text-sm text-muted-foreground line-clamp-1">
-                      {child.description}
-                    </p>
+                <div className="flex flex-wrap gap-4 text-sm">
+                  {event.location_name && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      <span>{event.location_name}</span>
+                    </div>
                   )}
-                  <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                    <Images className="h-3 w-3" />
-                    <span>{child.photo_count} bilder</span>
+                </div>
+              </div>
+
+              {/* Child Events */}
+              {childEvents.length > 0 && (
+                <div>
+                  <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-xl font-semibold flex items-center gap-2">
+                      <FolderTree className="h-5 w-5" />
+                      Under-events
+                    </h2>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowCreateChildDialog(true)}
+                    >
+                      <Plus className="mr-2 h-3 w-3" />
+                      Legg til under-event
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {childEvents.map((child) => (
+                      <div
+                        key={child.id}
+                        onClick={() => router.push(`/events/${child.id}`)}
+                        className="cursor-pointer rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
+                      >
+                        <h3 className="font-semibold">{child.name}</h3>
+                        {child.description && (
+                          <p className="mt-1 text-sm text-muted-foreground line-clamp-1">
+                            {child.description}
+                          </p>
+                        )}
+                        <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                          <Images className="h-3 w-3" />
+                          <span>{child.photo_count} bilder</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-          {/* Photos Section */}
-          <div className="h-[600px]">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Bilder</h2>
-              
-              {childEvents.length > 0 && (
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={includeDescendants}
-                    onChange={(e) => setIncludeDescendants(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300"
-                  />
-                  <span>Inkluder bilder fra under-events</span>
-                </label>
               )}
-            </div>
 
-            <PhotoGrid 
-              searchParams={{ event_id: eventId, include_descendants: includeDescendants }}
-              showViewSelector={true}
-              enableBatchOperations={false}
-            />
-          </div>
-        </div>
+              {/* Photos Section header with include descendants toggle */}
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Bilder</h2>
+                
+                {childEvents.length > 0 && (
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={includeDescendants}
+                      onChange={(e) => setIncludeDescendants(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <span>Inkluder bilder fra under-events</span>
+                  </label>
+                )}
+              </div>
+            </div>
+          }
+        />
       </div>
 
       {/* Create child event dialog */}

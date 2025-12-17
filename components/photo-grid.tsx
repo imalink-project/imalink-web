@@ -34,6 +34,7 @@ interface PhotoGridProps {
   onPhotoClick?: (photo: PhotoWithTags) => void;
   showViewSelector?: boolean;
   enableBatchOperations?: boolean; // Enable batch selection features
+  headerContent?: React.ReactNode; // Optional header content that scrolls with photos
 }
 
 export function PhotoGrid({ 
@@ -41,6 +42,7 @@ export function PhotoGrid({
   onPhotoClick,
   showViewSelector = true,
   enableBatchOperations = false,
+  headerContent,
 }: PhotoGridProps) {
   const [photos, setPhotos] = useState<PhotoWithTags[]>([]);
   const [loading, setLoading] = useState(true);
@@ -585,6 +587,9 @@ export function PhotoGrid({
 
       {/* Scrollable photo area */}
       <div className="flex-1 overflow-y-auto">
+        {/* Optional header content */}
+        {headerContent && <div className="mb-6">{headerContent}</div>}
+
         {/* Photo grid - grouped or flat */}
       {groupByDate && photoGroups ? (
         // Grouped by date view
