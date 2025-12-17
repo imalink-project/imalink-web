@@ -67,21 +67,19 @@ export default function Home() {
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-hidden">
-          <div className="grid h-full gap-6 lg:grid-cols-[300px_1fr]">
-            {/* Sidebar with filters */}
-            <aside className="overflow-y-auto px-4 py-6 space-y-4">
-              <SearchFilters onSearchChange={handleSearchChange} />
-            </aside>
+        <div className="flex-1 flex overflow-hidden">
+          {/* Sidebar with filters */}
+          <aside className="w-[300px] overflow-y-auto px-4 py-6 space-y-4 border-r">
+            <SearchFilters onSearchChange={handleSearchChange} />
+          </aside>
 
-            {/* Photo Grid - manages its own scroll */}
-            <div className="h-full px-4 py-6">
-              <PhotoGrid
-                searchParams={searchParams}
-                onPhotoClick={handlePhotoClick}
-                enableBatchOperations={true}
-              />
-            </div>
+          {/* Photo Grid - manages its own scroll */}
+          <div className="flex-1 px-4 py-6">
+            <PhotoGrid
+              searchParams={searchParams}
+              onPhotoClick={handlePhotoClick}
+              enableBatchOperations={true}
+            />
           </div>
         </div>
       </div>
