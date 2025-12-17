@@ -90,6 +90,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               <div>
                 <h1 className="text-lg font-bold">ImaLink</h1>
                 <p className="text-xs text-muted-foreground">Photo Gallery</p>
+                <p className="text-[10px] text-muted-foreground/60">2025-12-17 22:40</p>
               </div>
             </Link>
           </div>
