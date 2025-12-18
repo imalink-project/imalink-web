@@ -119,8 +119,12 @@ export function PhotoDetailDialog({
       const photoCollections: Collection[] = [];
       
       for (const collection of allCollections.collections) {
-        const photos = await apiClient.getCollectionPhotos(collection.id, 0, 1000);
-        if (photos.some(p => p.hothash === hothash)) {
+        // Check if photo is in collection's items array
+        const items = (collection as any).items || [];
+        const hasPhoto = items.some((item: any) => 
+          item.type === 'photo' && item.photo_hothash === hothash
+        );
+        if (hasPhoto) {
           photoCollections.push(collection);
         }
       }

@@ -76,6 +76,8 @@ export default function CollectionDetailPage() {
 
     try {
       const data = await apiClient.getCollection(collectionId);
+      console.log('Collection data loaded:', data);
+      console.log('Items:', (data as any).items);
       setCollection(data);
       setEditName(data.name);
       setEditDescription(data.description || '');
@@ -242,10 +244,18 @@ export default function CollectionDetailPage() {
   }
 
   if (!collection) {
-    return null;
+    console.log('Collection is null/undefined - should not happen if loading is false');
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="rounded-md bg-destructive/15 p-4 text-destructive">
+          Collection not found (ID: {collectionId})
+        </div>
+      </div>
+    );
   }
 
   const items = (collection as any).items as CollectionItem[] || [];
+  console.log('Rendering with items:', items);
 
   return (
     <div className="container mx-auto px-4 py-8">
