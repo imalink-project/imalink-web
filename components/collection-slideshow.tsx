@@ -170,44 +170,26 @@ interface PhotoSlideProps {
 }
 
 function PhotoSlide({ hothash, onLoad }: PhotoSlideProps) {
-  const [imageUrl, setImageUrl] = useState<string>('');
-  const [error, setError] = useState(false);
+  // Use coldpreview URL directly (larger, better quality)
+  const coldpreviewUrl = apiClient.getColdPreviewUrl(hothash, 2560);
+  const hotpreviewUrl = apiClient.getHotPreviewUrl(hothash);
+  
+  const [imageUrl, setImageUrl] = useState<string>(coldpreviewUrl);
+  const [useFallback, setUseFallback] = useState(false);
 
+  const handleError = () => {
+    if (!useFallback) {
+      console.log('Coldpreview failed, falling back to hotpreview');
+      setUseFallback(true);
+      setImageUrl(hotpreviewUrl);
+    }
+  };
+
+  // Reset when hothash changes
   useEffect(() => {
-    let mounted = true;
-
-    const loadImage = async () => {
-      try {
-        // Use coldpreview for better quality
-        const url = await apiClient.fetchColdPreview(hothash, 2560);
-        if (mounted) {
-          setImageUrl(url);
-          setError(false);
-        }
-      } catch (err) {
-        console.error('Failed to load image:', err);
-        if (mounted) {
-          // Fallback to hotpreview
-          setImageUrl(apiClient.getHotPreviewUrl(hothash));
-          setError(false);
-        }
-      }
-    };
-
-    loadImage();
-
-    return () => {
-      mounted = false;
-    };
-  }, [hothash]);
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center text-white">
-        <p>Failed to load image</p>
-      </div>
-    );
-  }
+    setImageUrl(coldpreviewUrl);
+    setUseFallback(false);
+  }, [hothash, coldpreviewUrl]);
 
   return (
     <img
@@ -215,6 +197,7 @@ function PhotoSlide({ hothash, onLoad }: PhotoSlideProps) {
       alt="Slide"
       className="max-h-full max-w-full object-contain transition-opacity duration-300"
       onLoad={onLoad}
+      onError={handleError}
     />
   );
 }
