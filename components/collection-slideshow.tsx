@@ -21,7 +21,6 @@ export function CollectionSlideshow({
 }: CollectionSlideshowProps) {
   const [currentIndex, setCurrentIndex] = useState(startIndex);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [imageLoading, setImageLoading] = useState(true);
 
   const currentItem = items[currentIndex];
   const totalItems = items.length;
@@ -73,12 +72,10 @@ export function CollectionSlideshow({
 
   const handlePrevious = useCallback(() => {
     setCurrentIndex(prev => (prev > 0 ? prev - 1 : totalItems - 1));
-    setImageLoading(true);
   }, [totalItems]);
 
   const handleNext = useCallback(() => {
     setCurrentIndex(prev => (prev < totalItems - 1 ? prev + 1 : 0));
-    setImageLoading(true);
   }, [totalItems]);
 
   if (!isOpen) return null;
@@ -124,10 +121,7 @@ export function CollectionSlideshow({
       {/* Main content area */}
       <div className="absolute inset-0 flex items-center justify-center p-16">
         {currentItem?.type === 'photo' ? (
-          <PhotoSlide
-            hothash={currentItem.photo_hothash}
-            onLoad={() => setImageLoading(false)}
-          />
+          <PhotoSlide hothash={currentItem.photo_hothash} />
         ) : currentItem?.type === 'text' ? (
           <TextSlide
             title={currentItem.text_card.title}
@@ -153,51 +147,58 @@ export function CollectionSlideshow({
       >
         <ChevronRight className="h-10 w-10" />
       </Button>
-
-      {/* Loading indicator */}
-      {imageLoading && currentItem?.type === 'photo' && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent" />
-        </div>
-      )}
     </div>
   );
 }
 
 interface PhotoSlideProps {
   hothash: string;
-  onLoad: () => void;
 }
 
-function PhotoSlide({ hothash, onLoad }: PhotoSlideProps) {
-  // Use coldpreview URL directly (larger, better quality)
-  const coldpreviewUrl = apiClient.getColdPreviewUrl(hothash, 2560);
-  const hotpreviewUrl = apiClient.getHotPreviewUrl(hothash);
-  
-  const [imageUrl, setImageUrl] = useState<string>(coldpreviewUrl);
-  const [useFallback, setUseFallback] = useState(false);
+function PhotoSlide({ hothash }: PhotoSlideProps) {
+  const [imageUrl, setImageUrl] = useState<string>('');
+  const [loading, setLoading] = useState(true);
 
-  const handleError = () => {
-    if (!useFallback) {
-      console.log('Coldpreview failed, falling back to hotpreview');
-      setUseFallback(true);
-      setImageUrl(hotpreviewUrl);
-    }
-  };
-
-  // Reset when hothash changes
   useEffect(() => {
-    setImageUrl(coldpreviewUrl);
-    setUseFallback(false);
-  }, [hothash, coldpreviewUrl]);
+    let cancelled = false;
+    
+    const loadImage = async () => {
+      setLoading(true);
+      try {
+        // Use fetchColdPreview which handles auth and creates Object URL
+        const url = await apiClient.fetchColdPreview(hothash, 2560);
+        if (!cancelled) {
+          setImageUrl(url);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Failed to load image:', error);
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadImage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hothash]);
+
+  if (loading || !imageUrl) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <img
       src={imageUrl}
       alt="Slide"
       className="max-h-full max-w-full object-contain transition-opacity duration-300"
-      onLoad={onLoad}
-      onError={handleError}
     />
   );
 }
