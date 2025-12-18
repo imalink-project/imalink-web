@@ -237,22 +237,27 @@ class ApiClient {
 
     try {
       // Try coldpreview first
-      const coldResponse = await fetch(this.getColdPreviewUrl(hothash, width, height), {
+      const coldUrl = this.getColdPreviewUrl(hothash, width, height);
+      console.log(`[fetchColdPreview] Fetching coldpreview: ${coldUrl}`);
+      const coldResponse = await fetch(coldUrl, {
         headers: {
           'Authorization': `Bearer ${this.token}`,
         },
       });
 
+      console.log(`[fetchColdPreview] Coldpreview response status: ${coldResponse.status}`);
       if (coldResponse.ok) {
         const blob = await coldResponse.blob();
+        console.log(`[fetchColdPreview] Coldpreview blob size: ${blob.size} bytes`);
         const url = URL.createObjectURL(blob);
         this.coldPreviewCache.set(cacheKey, url);
         return url;
       }
 
       // Fallback to hotpreview if coldpreview fails
-      console.warn(`Coldpreview not available for ${hothash}, falling back to hotpreview`);
-      const hotResponse = await fetch(this.getHotPreviewUrl(hothash), {
+      console.warn(`[fetchColdPreview] Coldpreview not available for ${hothash} (status ${coldResponse.status}), falling back to hotpreview`);
+      const hotUrl = this.getHotPreviewUrl(hothash);
+      const hotResponse = await fetch(hotUrl, {
         headers: {
           'Authorization': `Bearer ${this.token}`,
         },
@@ -260,6 +265,7 @@ class ApiClient {
 
       if (hotResponse.ok) {
         const blob = await hotResponse.blob();
+        console.log(`[fetchColdPreview] Using hotpreview fallback, blob size: ${blob.size} bytes`);
         const url = URL.createObjectURL(blob);
         this.coldPreviewCache.set(cacheKey, url);
         return url;
@@ -267,7 +273,7 @@ class ApiClient {
 
       throw new Error('Failed to load both coldpreview and hotpreview');
     } catch (error) {
-      console.error('Error loading preview:', error);
+      console.error('[fetchColdPreview] Error loading preview:', error);
       throw error;
     }
   }

@@ -164,15 +164,17 @@ function PhotoSlide({ hothash }: PhotoSlideProps) {
     
     const loadImage = async () => {
       setLoading(true);
+      console.log('[Slideshow] Loading image for hothash:', hothash);
       try {
         // Use fetchColdPreview which handles auth and creates Object URL
         const url = await apiClient.fetchColdPreview(hothash, 2560);
+        console.log('[Slideshow] Got image URL:', url.substring(0, 50) + '...');
         if (!cancelled) {
           setImageUrl(url);
           setLoading(false);
         }
       } catch (error) {
-        console.error('Failed to load image:', error);
+        console.error('[Slideshow] Failed to load image:', error);
         if (!cancelled) {
           setLoading(false);
         }
