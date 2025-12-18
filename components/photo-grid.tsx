@@ -86,16 +86,18 @@ export function PhotoGrid({
       let items: PhotoWithTags[];
       let total: number;
 
-      // Special handling for collection_id - use dedicated endpoint with pagination
+      // Special handling for collection_id - use dedicated endpoint
       if (searchParams?.collection_id) {
-        const response = await apiClient.getCollectionPhotos(
+        const collectionPhotos = await apiClient.getCollectionPhotos(
           searchParams.collection_id,
           currentOffset,
           limit
         );
-        items = (response.data || []) as PhotoWithTags[];
-        total = response.total || items.length;
-        setTotalIsApproximate(false); // Collections now return exact total
+        items = collectionPhotos as PhotoWithTags[];
+        // Backend doesn't return total count for collections yet
+        // Use items.length as approximation - may be less than actual total
+        total = currentOffset + items.length;
+        setTotalIsApproximate(items.length === limit); // If full page, there may be more
       } else if (searchParams?.event_id) {
         // Special handling for event_id - use dedicated endpoint
         const eventPhotos = await apiClient.getEventPhotos(
@@ -195,12 +197,12 @@ export function PhotoGrid({
           let items: PhotoWithTags[];
           
           if (searchParams?.collection_id) {
-            const response = await apiClient.getCollectionPhotos(
+            const collectionPhotos = await apiClient.getCollectionPhotos(
               searchParams.collection_id,
               nextOffset,
               chunkSize
             );
-            items = (response.data || []) as PhotoWithTags[];
+            items = collectionPhotos as PhotoWithTags[];
           } else if (searchParams?.event_id) {
             // For events, we load all at once, so just break
             break;

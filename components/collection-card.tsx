@@ -40,10 +40,17 @@ export function CollectionCard({ collection }: CollectionCardProps) {
           )}
 
           <CardMeta className="justify-between">
-            <CardMetaItem
-              icon={<ImageIcon className="h-3 w-3" />}
-              label={`${collection.photo_count} ${collection.photo_count === 1 ? 'bilde' : 'bilder'}`}
-            />
+            <div className="flex gap-3">
+              <CardMetaItem
+                icon={<ImageIcon className="h-3 w-3" />}
+                label={`${collection.photo_count} ${collection.photo_count === 1 ? 'bilde' : 'bilder'}`}
+              />
+              {(collection as any).text_card_count > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  +{(collection as any).text_card_count} tekstkort
+                </Badge>
+              )}
+            </div>
             <CardMetaItem
               icon={<Calendar className="h-3 w-3" />}
               label={formatDate(collection.created_at)}

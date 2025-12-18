@@ -44,6 +44,40 @@ export type Collection = components['schemas']['PhotoCollectionResponse'];
 export type CollectionCreate = components['schemas']['PhotoCollectionCreate'];
 export type CollectionUpdate = components['schemas']['PhotoCollectionUpdate'];
 
+// Collection Items (Photo + Text Cards)
+export type CollectionItemType = 'photo' | 'text';
+
+export interface CollectionTextCard {
+  title: string; // max 200 chars
+  body: string;  // max 2000 chars (plain text)
+}
+
+export interface CollectionPhotoItem {
+  type: 'photo';
+  photo_hothash: string;
+}
+
+export interface CollectionTextItem {
+  type: 'text';
+  text_card: CollectionTextCard;
+}
+
+export type CollectionItem = CollectionPhotoItem | CollectionTextItem;
+
+// Extended Collection with items (instead of hothashes)
+export interface CollectionWithItems {
+  id: number;
+  name: string;
+  description: string | null;
+  items: CollectionItem[];          // Mixed content array
+  item_count: number;                // Total items
+  photo_count: number;               // Just photos
+  text_card_count: number;           // Just text cards
+  cover_photo_hothash: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // Saved Searches
 export type SavedSearch = components['schemas']['SavedPhotoSearchResponse'];
 export type SavedSearchSummary = components['schemas']['SavedPhotoSearchSummary'];

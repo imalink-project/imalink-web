@@ -119,8 +119,8 @@ export function PhotoDetailDialog({
       const photoCollections: Collection[] = [];
       
       for (const collection of allCollections.collections) {
-        const response = await apiClient.getCollectionPhotos(collection.id, 0, 1000);
-        if (response.data.some(p => p.hothash === hothash)) {
+        const photos = await apiClient.getCollectionPhotos(collection.id, 0, 1000);
+        if (photos.some(p => p.hothash === hothash)) {
           photoCollections.push(collection);
         }
       }

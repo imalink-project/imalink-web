@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { useAuth } from '@/lib/auth-context';
 import { apiClient } from '@/lib/api-client';
-import type { Collection, PhotoWithTags, ExtendedSearchParams } from '@/lib/types';
-import { PhotoGrid } from '@/components/photo-grid';
+import type { Collection, PhotoWithTags, CollectionItem, CollectionTextCard } from '@/lib/types';
 import { PhotoDetailDialog } from '@/components/photo-detail-dialog';
+import { CollectionItemGrid } from '@/components/collection-item-grid';
+import { TextCardEditor } from '@/components/text-card-editor';
+import { PhotoGrid } from '@/components/photo-grid';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
@@ -18,8 +20,9 @@ import {
   Save, 
   X,
   Image as ImageIcon,
+  FileText,
+  Plus,
   Calendar,
-  AlertCircle,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -54,6 +57,12 @@ export default function CollectionDetailPage() {
   
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoWithTags | null>(null);
   const [showPhotoDetail, setShowPhotoDetail] = useState(false);
+  
+  const [showTextEditor, setShowTextEditor] = useState(false);
+  const [editingTextCardIndex, setEditingTextCardIndex] = useState<number | null>(null);
+  const [editingTextCard, setEditingTextCard] = useState<CollectionTextCard | undefined>(undefined);
+  
+  const [showAddPhotosDialog, setShowAddPhotosDialog] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && collectionId) {
@@ -123,16 +132,74 @@ export default function CollectionDetailPage() {
     router.push('/collections');
   };
 
-  const handlePhotoClick = (photo: PhotoWithTags) => {
-    setSelectedPhoto(photo);
-    setShowPhotoDetail(true);
+  const handleReorderItems = async (newItems: CollectionItem[]) => {
+    try {
+      await apiClient.reorderCollectionItems(collectionId, newItems);
+      await loadCollectionData();
+    } catch (err) {
+      console.error('Failed to reorder items:', err);
+      alert('Kunne ikke endre rekkefølge');
+    }
   };
 
-  const handlePhotosChanged = () => {
-    // Refresh collection metadata to update photo count
-    loadCollectionData();
-    // Trigger PhotoGrid refresh
-    setRefreshKey(prev => prev + 1);
+  const handleAddTextCard = () => {
+    setEditingTextCardIndex(null);
+    setEditingTextCard(undefined);
+    setShowTextEditor(true);
+  };
+
+  const handleEditTextCard = (index: number, card: CollectionTextCard) => {
+    setEditingTextCardIndex(index);
+    setEditingTextCard(card);
+    setShowTextEditor(true);
+  };
+
+  const handleSaveTextCard = async (card: CollectionTextCard) => {
+    try {
+      if (editingTextCardIndex !== null) {
+        // Update existing card
+        await apiClient.updateCollectionTextCard(collectionId, editingTextCardIndex, card);
+      } else {
+        // Add new card
+        const items: CollectionItem[] = [{ type: 'text', text_card: card }];
+        await apiClient.addItemsToCollection(collectionId, items);
+      }
+      await loadCollectionData();
+    } catch (err) {
+      console.error('Failed to save text card:', err);
+      throw err;
+    }
+  };
+
+  const handleDeleteItem = async (position: number) => {
+    if (!confirm('Er du sikker på at du vil slette dette elementet?')) {
+      return;
+    }
+
+    try {
+      await apiClient.deleteCollectionItem(collectionId, position);
+      await loadCollectionData();
+    } catch (err) {
+      console.error('Failed to delete item:', err);
+      alert('Kunne ikke slette element');
+    }
+  };
+
+  const handleAddPhotos = async (selectedHothashes: string[]) => {
+    try {
+      const items: CollectionItem[] = selectedHothashes.map(h => ({ type: 'photo', photo_hothash: h }));
+      await apiClient.addItemsToCollection(collectionId, items);
+      await loadCollectionData();
+      setShowAddPhotosDialog(false);
+    } catch (err) {
+      console.error('Failed to add photos:', err);
+      alert('Kunne ikke legge til bilder');
+    }
+  };
+
+  const handlePhotosSelectedInGrid = (photos: PhotoWithTags[]) => {
+    const hothashes = photos.map(p => p.hothash);
+    handleAddPhotos(hothashes);
   };
 
   const formatDate = (dateString: string) => {
@@ -178,104 +245,115 @@ export default function CollectionDetailPage() {
     return null;
   }
 
+  const items = (collection as any).items as CollectionItem[] || [];
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Compact fixed toolbar */}
-      <div className="flex-shrink-0 border-b bg-background px-4 py-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleBack}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Tilbake til samlinger
+    <div className="container mx-auto px-4 py-8">
+      {/* Back button */}
+      <Button
+        variant="ghost"
+        onClick={handleBack}
+        className="mb-6"
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Tilbake til samlinger
+      </Button>
+
+      {/* Collection header */}
+      {isEditing ? (
+        <div className="mb-8 space-y-4 rounded-lg border bg-card p-6">
+          <div>
+            <Label htmlFor="edit-name">Navn</Label>
+            <Input
+              id="edit-name"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              maxLength={255}
+              disabled={saving}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="edit-description">Beskrivelse</Label>
+            <textarea
+              id="edit-description"
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              disabled={saving}
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <Button onClick={handleSave} disabled={saving || !editName.trim()}>
+              <Save className="mr-2 h-4 w-4" />
+              {saving ? 'Lagrer...' : 'Lagre'}
+            </Button>
+            <Button variant="outline" onClick={handleCancelEdit} disabled={saving}>
+              <X className="mr-2 h-4 w-4" />
+              Avbryt
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-8">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold">{collection.name}</h1>
+              {collection.description && (
+                <p className="mt-2 text-muted-foreground">{collection.description}</p>
+              )}
+              
+              <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <ImageIcon className="h-4 w-4" />
+                  <span>{(collection as any).photo_count || 0} bilder</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <FileText className="h-4 w-4" />
+                  <span>{(collection as any).text_card_count || 0} tekstkort</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  <span>Opprettet {formatDate(collection.created_at)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIsEditing(true)}>
+                <Edit2 className="mr-2 h-4 w-4" />
+                Rediger
+              </Button>
+              <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Slett
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Action buttons */}
+      <div className="mb-6 flex gap-2">
+        <Button onClick={() => setShowAddPhotosDialog(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Legg til bilder
+        </Button>
+        <Button variant="outline" onClick={handleAddTextCard}>
+          <FileText className="mr-2 h-4 w-4" />
+          Legg til tekstkort
         </Button>
       </div>
 
-      {/* PhotoGrid takes full remaining height */}
-      <div className="flex-1 overflow-hidden px-4">
-        <PhotoGrid
-          key={refreshKey}
-          searchParams={{ collection_id: collectionId }}
-          onPhotoClick={handlePhotoClick}
-          enableBatchOperations={true}
-          headerContent={
-            <div className="space-y-6">
-              {isEditing ? (
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="edit-name">Navn</Label>
-                    <Input
-                      id="edit-name"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      maxLength={255}
-                      disabled={saving}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="edit-description">Beskrivelse</Label>
-                    <textarea
-                      id="edit-description"
-                      value={editDescription}
-                      onChange={(e) => setEditDescription(e.target.value)}
-                      className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      disabled={saving}
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button onClick={handleSave} disabled={saving || !editName.trim()}>
-                      <Save className="mr-2 h-4 w-4" />
-                      {saving ? 'Lagrer...' : 'Lagre'}
-                    </Button>
-                    <Button variant="outline" onClick={handleCancelEdit} disabled={saving}>
-                      <X className="mr-2 h-4 w-4" />
-                      Avbryt
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h1 className="text-3xl font-bold">{collection.name}</h1>
-                      {collection.description && (
-                        <p className="mt-2 text-muted-foreground">{collection.description}</p>
-                      )}
-                      
-                      <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <ImageIcon className="h-4 w-4" />
-                          <span>{collection.photo_count} {collection.photo_count === 1 ? 'bilde' : 'bilder'}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>Opprettet {formatDate(collection.created_at)}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => setIsEditing(true)}>
-                        <Edit2 className="mr-2 h-4 w-4" />
-                        Rediger
-                      </Button>
-                      <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Slett
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <h2 className="text-xl font-semibold">Bilder</h2>
-            </div>
-          }
-        />
-      </div>
+      {/* Items grid */}
+      <CollectionItemGrid
+        items={items}
+        collectionId={collectionId}
+        onReorder={handleReorderItems}
+        onEditTextCard={handleEditTextCard}
+        onDeleteItem={handleDeleteItem}
+      />
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -300,8 +378,43 @@ export default function CollectionDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Text card editor */}
+      <TextCardEditor
+        isOpen={showTextEditor}
+        onClose={() => setShowTextEditor(false)}
+        onSave={handleSaveTextCard}
+        initialData={editingTextCard}
+        title={editingTextCardIndex !== null ? 'Rediger tekstkort' : 'Legg til tekstkort'}
+      />
+
+      {/* Add photos dialog - Temporarily using standard AddToCollectionDialog */}
+      {/* TODO: Implement proper photo selection with items API integration */}
+      {showAddPhotosDialog && (
+        <Dialog open={showAddPhotosDialog} onOpenChange={setShowAddPhotosDialog}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Legg til bilder</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Bruk &quot;Add to Collection&quot; knappen i PhotoGrid for å legge til bilder i samlingen.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Merk: Backend bruker nå items-basert API. Frontend vil bli oppdatert til å vise 
+                en bedre fotovalg-dialog som sender items direkte.
+              </p>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={() => setShowAddPhotosDialog(false)}>
+                OK
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Photo detail dialog */}
-        <PhotoDetailDialog
+      <PhotoDetailDialog
         photo={selectedPhoto}
         open={showPhotoDetail}
         onOpenChange={setShowPhotoDetail}

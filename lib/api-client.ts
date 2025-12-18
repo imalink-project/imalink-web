@@ -14,6 +14,8 @@ import type {
   Collection,
   CollectionCreate,
   CollectionUpdate,
+  CollectionItem,
+  CollectionTextCard,
   InputChannel,
   InputChannelUpdate,
   PhotoTextDocument,
@@ -415,7 +417,7 @@ class ApiClient {
     }
   }
 
-  // Collections
+  // Collections (Items-based: photos + text cards)
   async getCollections(skip: number = 0, limit: number = 100): Promise<{ collections: Collection[]; total: number }> {
     const params = new URLSearchParams();
     params.append('skip', skip.toString());
@@ -467,43 +469,30 @@ class ApiClient {
     }
   }
 
+  // LEGACY: Old hothashes-based endpoints (kept for backward compatibility during migration)
   async addPhotosToCollection(id: number, hothashes: string[]): Promise<Collection> {
-    const response = await fetch(`${this.baseUrl}/collections/${id}/photos`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify({ hothashes }),
-    });
-
-    const result = await this.handleResponse<{ collection_id: number; photo_count: number; affected_count: number }>(response);
-    // Return updated collection
-    return this.getCollection(id);
+    // Convert hothashes to items format
+    const items = hothashes.map(h => ({ type: 'photo' as const, photo_hothash: h }));
+    return this.addItemsToCollection(id, items);
   }
 
   async removePhotosFromCollection(id: number, hothashes: string[]): Promise<Collection> {
-    const response = await fetch(`${this.baseUrl}/collections/${id}/photos`, {
-      method: 'DELETE',
-      headers: this.getHeaders(),
-      body: JSON.stringify({ hothashes }),
-    });
-
-    const result = await this.handleResponse<{ collection_id: number; photo_count: number; affected_count: number }>(response);
-    // Return updated collection
-    return this.getCollection(id);
+    // Get current collection, find positions of hothashes, delete them
+    const collection = await this.getCollection(id);
+    // Filter out the photos we want to remove, keep everything else
+    const items = (collection as any).items?.filter((item: any) => 
+      item.type !== 'photo' || !hothashes.includes(item.photo_hothash)
+    ) || [];
+    return this.reorderCollectionItems(id, items);
   }
 
   async reorderCollectionPhotos(id: number, hothashes: string[]): Promise<Collection> {
-    const response = await fetch(`${this.baseUrl}/collections/${id}/photos/reorder`, {
-      method: 'PUT',
-      headers: this.getHeaders(),
-      body: JSON.stringify({ hothashes }),
-    });
-
-    const result = await this.handleResponse<{ collection_id: number; photo_count: number }>(response);
-    // Return updated collection
-    return this.getCollection(id);
+    // Convert to items format (only photos)
+    const items = hothashes.map(h => ({ type: 'photo' as const, photo_hothash: h }));
+    return this.reorderCollectionItems(id, items);
   }
 
-  async getCollectionPhotos(id: number, skip: number = 0, limit: number = 100): Promise<{ data: Photo[]; total: number; offset: number; limit: number }> {
+  async getCollectionPhotos(id: number, skip: number = 0, limit: number = 100): Promise<Photo[]> {
     const params = new URLSearchParams();
     params.append('skip', skip.toString());
     params.append('limit', limit.toString());
@@ -512,7 +501,60 @@ class ApiClient {
       headers: this.getHeaders(),
     });
 
-    return this.handleResponse<{ data: Photo[]; total: number; offset: number; limit: number }>(response);
+    return this.handleResponse<Photo[]>(response);
+  }
+
+  // NEW: Items-based collection management (photos + text cards)
+  async addItemsToCollection(id: number, items: CollectionItem[]): Promise<Collection> {
+    const response = await fetch(`${this.baseUrl}/collections/${id}/items`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ items }),
+    });
+
+    const result = await this.handleResponse<{ collection_id: number; item_count: number; photo_count: number; affected_count: number }>(response);
+    return this.getCollection(id);
+  }
+
+  async reorderCollectionItems(id: number, items: CollectionItem[]): Promise<Collection> {
+    const response = await fetch(`${this.baseUrl}/collections/${id}/items/reorder`, {
+      method: 'PUT',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ items }),
+    });
+
+    const result = await this.handleResponse<{ collection_id: number; item_count: number; photo_count: number; affected_count: number }>(response);
+    return this.getCollection(id);
+  }
+
+  async deleteCollectionItem(id: number, position: number): Promise<Collection> {
+    const response = await fetch(`${this.baseUrl}/collections/${id}/items/${position}`, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+    });
+
+    const result = await this.handleResponse<{ collection_id: number; item_count: number; photo_count: number; affected_count: number }>(response);
+    return this.getCollection(id);
+  }
+
+  async updateCollectionTextCard(id: number, position: number, textCard: Partial<CollectionTextCard>): Promise<Collection> {
+    const response = await fetch(`${this.baseUrl}/collections/${id}/items/${position}`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify(textCard),
+    });
+
+    const result = await this.handleResponse<{ collection_id: number; item_count: number; photo_count: number; affected_count: number }>(response);
+    return this.getCollection(id);
+  }
+
+  async cleanupCollectionPhotos(id: number): Promise<{ collection_id: number; removed_count: number }> {
+    const response = await fetch(`${this.baseUrl}/collections/${id}/cleanup`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+    });
+
+    return this.handleResponse<{ collection_id: number; removed_count: number }>(response);
   }
 
   // Input Channels

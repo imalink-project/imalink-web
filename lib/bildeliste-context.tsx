@@ -199,8 +199,7 @@ export function BildelisteProvider({ children }: BildelisteProviderProps) {
   // Load from collection
   const loadFromCollection = useCallback(async (collectionId: number): Promise<string> => {
     const collection = await apiClient.getCollection(collectionId);
-    const response = await apiClient.getCollectionPhotos(collectionId, 0, 1000);
-    const photos = response.data as PhotoWithTags[];
+    const photos = await apiClient.getCollectionPhotos(collectionId, 0, 1000) as PhotoWithTags[];
     
     const source: BildelisteSource = { 
       type: 'collection', 
