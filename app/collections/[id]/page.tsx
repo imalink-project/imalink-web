@@ -8,6 +8,7 @@ import type { Collection, PhotoWithTags, CollectionItem, CollectionTextCard } fr
 import { PhotoDetailDialog } from '@/components/photo-detail-dialog';
 import { CollectionItemGrid } from '@/components/collection-item-grid';
 import { TextCardEditor } from '@/components/text-card-editor';
+import { CollectionSlideshow } from '@/components/collection-slideshow';
 import { PhotoGrid } from '@/components/photo-grid';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -23,6 +24,7 @@ import {
   FileText,
   Plus,
   Calendar,
+  Presentation,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -63,6 +65,7 @@ export default function CollectionDetailPage() {
   const [editingTextCard, setEditingTextCard] = useState<CollectionTextCard | undefined>(undefined);
   
   const [showAddPhotosDialog, setShowAddPhotosDialog] = useState(false);
+  const [showSlideshow, setShowSlideshow] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && collectionId) {
@@ -354,6 +357,12 @@ export default function CollectionDetailPage() {
           <FileText className="mr-2 h-4 w-4" />
           Legg til tekstkort
         </Button>
+        {items.length > 0 && (
+          <Button variant="outline" onClick={() => setShowSlideshow(true)}>
+            <Presentation className="mr-2 h-4 w-4" />
+            Lysbildevisning
+          </Button>
+        )}
       </div>
 
       {/* Items grid */}
@@ -422,6 +431,13 @@ export default function CollectionDetailPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Slideshow */}
+      <CollectionSlideshow
+        items={items}
+        isOpen={showSlideshow}
+        onClose={() => setShowSlideshow(false)}
+      />
 
       {/* Photo detail dialog */}
       <PhotoDetailDialog
