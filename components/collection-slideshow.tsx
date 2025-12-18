@@ -167,7 +167,8 @@ function PhotoSlide({ hothash }: PhotoSlideProps) {
       console.log('[Slideshow] Loading image for hothash:', hothash);
       try {
         // Use fetchColdPreview which handles auth and creates Object URL
-        const url = await apiClient.fetchColdPreview(hothash, 2560);
+        // Max width is 2000 according to API spec
+        const url = await apiClient.fetchColdPreview(hothash, 2000);
         console.log('[Slideshow] Got image URL:', url.substring(0, 50) + '...');
         if (!cancelled) {
           setImageUrl(url);
