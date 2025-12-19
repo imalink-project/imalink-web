@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { apiClient } from '@/lib/api-client';
+import { exportSlideshow } from '@/lib/slideshow-export';
 import type { Collection, PhotoWithTags, CollectionItem, CollectionTextCard } from '@/lib/types';
 import { PhotoDetailDialog } from '@/components/photo-detail-dialog';
 import { CollectionItemGrid } from '@/components/collection-item-grid';
@@ -25,6 +26,7 @@ import {
   Plus,
   Calendar,
   Presentation,
+  Download,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -66,6 +68,7 @@ export default function CollectionDetailPage() {
   
   const [showAddPhotosDialog, setShowAddPhotosDialog] = useState(false);
   const [showSlideshow, setShowSlideshow] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && collectionId) {
@@ -205,6 +208,33 @@ export default function CollectionDetailPage() {
   const handlePhotosSelectedInGrid = (photos: PhotoWithTags[]) => {
     const hothashes = photos.map(p => p.hothash);
     handleAddPhotos(hothashes);
+  };
+
+  const handleExportSlideshow = async () => {
+    if (!collection || items.length === 0) return;
+    
+    setExporting(true);
+    try {
+      const blob = await exportSlideshow({
+        collectionName: collection.name,
+        items: items,
+      });
+      
+      // Download the ZIP file
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${collection.name.replace(/[^a-z0-9]/gi, '_')}_slideshow.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to export slideshow:', err);
+      alert('Kunne ikke eksportere lysbildevisning');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -358,10 +388,16 @@ export default function CollectionDetailPage() {
           Legg til tekstkort
         </Button>
         {items.length > 0 && (
-          <Button variant="outline" onClick={() => setShowSlideshow(true)}>
-            <Presentation className="mr-2 h-4 w-4" />
-            Lysbildevisning
-          </Button>
+          <>
+            <Button variant="outline" onClick={() => setShowSlideshow(true)}>
+              <Presentation className="mr-2 h-4 w-4" />
+              Lysbildevisning
+            </Button>
+            <Button variant="outline" onClick={handleExportSlideshow} disabled={exporting}>
+              <Download className="mr-2 h-4 w-4" />
+              {exporting ? 'Eksporterer...' : 'Last ned'}
+            </Button>
+          </>
         )}
       </div>
 
