@@ -16,6 +16,7 @@ interface CollectionItemGridProps {
   onPhotoClick?: (hothash: string) => void;
   cursorPosition: number | null; // Position before item N (0 = top, items.length = end)
   onCursorChange: (position: number | null) => void;
+  onAddTextCard?: () => void; // Callback to add text card at cursor
 }
 
 export function CollectionItemGrid({
@@ -27,6 +28,7 @@ export function CollectionItemGrid({
   onPhotoClick,
   cursorPosition,
   onCursorChange,
+  onAddTextCard,
 }: CollectionItemGridProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -69,12 +71,15 @@ export function CollectionItemGrid({
                 {cursorPosition === index && (
                   <div className="absolute -top-4 left-0 right-0 flex items-center gap-2 py-1">
                     <div className="flex-1 h-1 bg-primary rounded-full shadow-lg shadow-primary/50" />
-                    <button
-                      onClick={() => onCursorChange(null)}
-                      className="px-2 py-0.5 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
-                    >
-                      ✕ Kursor
-                    </button>
+                    {onAddTextCard && (
+                      <button
+                        onClick={onAddTextCard}
+                        className="px-3 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors flex items-center gap-1"
+                      >
+                        <FileText className="h-3 w-3" />
+                        Legg til tekstkort
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -133,12 +138,15 @@ export function CollectionItemGrid({
               {cursorPosition === items.length && (
                 <div className="absolute -top-4 left-0 right-0 flex items-center gap-2 py-1">
                   <div className="flex-1 h-1 bg-primary rounded-full shadow-lg shadow-primary/50" />
-                  <button
-                    onClick={() => onCursorChange(null)}
-                    className="px-2 py-0.5 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
-                  >
-                    ✕ Kursor
-                  </button>
+                  {onAddTextCard && (
+                    <button
+                      onClick={onAddTextCard}
+                      className="px-3 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors flex items-center gap-1"
+                    >
+                      <FileText className="h-3 w-3" />
+                      Legg til tekstkort
+                    </button>
+                  )}
                 </div>
               )}
 

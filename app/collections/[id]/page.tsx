@@ -469,6 +469,7 @@ export default function CollectionDetailPage() {
           onDeleteItem={handleDeleteItem}
           cursorPosition={cursorPosition}
           onCursorChange={setCursorPosition}
+          onAddTextCard={() => setShowTextEditor(true)}
           onPhotoClick={(hothash) => {
             const photo = getPhoto(hothash);
             if (photo) {

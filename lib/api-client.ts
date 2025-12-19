@@ -523,15 +523,39 @@ class ApiClient {
   }
 
   // ATOMIC: Insert items at specific position
+  // TODO: Remove fallback when backend implements /items/insert endpoint
   async insertItemsAtPosition(id: number, position: number, items: CollectionItem[]): Promise<Collection> {
-    const response = await fetch(`${this.baseUrl}/collections/${id}/items/insert`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify({ position, items }),
-    });
+    try {
+      const response = await fetch(`${this.baseUrl}/collections/${id}/items/insert`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ position, items }),
+      });
 
-    const result = await this.handleResponse<{ collection_id: number; item_count: number; affected_count: number; affected_positions: number[] }>(response);
-    return this.getCollection(id);
+      const result = await this.handleResponse<{ collection_id: number; item_count: number; affected_count: number; affected_positions: number[] }>(response);
+      return this.getCollection(id);
+    } catch (error: any) {
+      // Fallback to workaround if endpoint not implemented (405)
+      if (error.message?.includes('Method Not Allowed') || error.status === 405) {
+        console.warn('Insert endpoint not available, using fallback (append + reorder)');
+        
+        // 1. Append to end
+        await this.addItemsToCollection(id, items);
+        
+        // 2. Get current items
+        const collection = await this.getCollection(id);
+        const currentItems = (collection as any).items as CollectionItem[];
+        
+        // 3. Reorder: move newly added items to position
+        const reorderedItems = [...currentItems];
+        const addedItems = reorderedItems.splice(-items.length, items.length);
+        reorderedItems.splice(position, 0, ...addedItems);
+        
+        // 4. Send reordered list
+        return this.reorderCollectionItems(id, reorderedItems);
+      }
+      throw error;
+    }
   }
 
   // ATOMIC: Move items from one position to another
