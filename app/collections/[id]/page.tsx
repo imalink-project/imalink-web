@@ -27,6 +27,7 @@ import {
   Calendar,
   Presentation,
   Download,
+  ArrowUpDown,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -69,6 +70,7 @@ export default function CollectionDetailPage() {
   const [showAddPhotosDialog, setShowAddPhotosDialog] = useState(false);
   const [showSlideshow, setShowSlideshow] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc'); // desc = newest first
 
   useEffect(() => {
     if (isAuthenticated && collectionId) {
@@ -219,7 +221,7 @@ export default function CollectionDetailPage() {
         collectionName: collection.name,
         collectionDescription: collection.description || undefined,
         collectionId: collectionId,
-        items: items,
+        items: sortedItems,
       });
       
       // Download the ZIP file
@@ -291,6 +293,13 @@ export default function CollectionDetailPage() {
 
   const items = (collection as any).items as CollectionItem[] || [];
   console.log('Rendering with items:', items);
+
+  // Apply sorting to items
+  const sortedItems = sortOrder === 'desc' ? items : [...items].reverse();
+
+  const handleToggleSortOrder = () => {
+    setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -380,7 +389,7 @@ export default function CollectionDetailPage() {
       )}
 
       {/* Action buttons */}
-      <div className="mb-6 flex gap-2">
+      <div className="mb-6 flex gap-2 flex-wrap items-center">
         <Button onClick={() => setShowAddPhotosDialog(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Legg til bilder
@@ -391,6 +400,10 @@ export default function CollectionDetailPage() {
         </Button>
         {items.length > 0 && (
           <>
+            <Button variant="outline" onClick={handleToggleSortOrder}>
+              <ArrowUpDown className="mr-2 h-4 w-4" />
+              {sortOrder === 'desc' ? 'Nyeste først' : 'Eldste først'}
+            </Button>
             <Button variant="outline" onClick={() => setShowSlideshow(true)}>
               <Presentation className="mr-2 h-4 w-4" />
               Lysbildevisning
@@ -405,7 +418,7 @@ export default function CollectionDetailPage() {
 
       {/* Items grid */}
       <CollectionItemGrid
-        items={items}
+        items={sortedItems}
         collectionId={collectionId}
         onReorder={handleReorderItems}
         onEditTextCard={handleEditTextCard}
@@ -472,7 +485,7 @@ export default function CollectionDetailPage() {
 
       {/* Slideshow */}
       <CollectionSlideshow
-        items={items}
+        items={sortedItems}
         isOpen={showSlideshow}
         onClose={() => setShowSlideshow(false)}
       />
