@@ -217,6 +217,8 @@ export default function CollectionDetailPage() {
     try {
       const blob = await exportSlideshow({
         collectionName: collection.name,
+        collectionDescription: collection.description || undefined,
+        collectionId: collectionId,
         items: items,
       });
       
