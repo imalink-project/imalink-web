@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { usePhotoStore } from '@/lib/photo-store';
 import { apiClient } from '@/lib/api-client';
 import { exportSlideshow } from '@/lib/slideshow-export';
 import type { Collection, PhotoWithTags, CollectionItem, CollectionTextCard } from '@/lib/types';
@@ -44,6 +45,7 @@ export default function CollectionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
+  const { addPhotos } = usePhotoStore();
   
   const collectionId = parseInt(params.id as string);
   
@@ -88,6 +90,25 @@ export default function CollectionDetailPage() {
       setCollection(data);
       setEditName(data.name);
       setEditDescription(data.description || '');
+
+      // Pre-load all photos in items to PhotoStore
+      const items = (data as any).items as CollectionItem[] || [];
+      const hothashes = items
+        .filter(item => item.type === 'photo')
+        .map(item => item.photo_hothash);
+      
+      if (hothashes.length > 0) {
+        console.log(`Loading ${hothashes.length} photos for PhotoStore...`);
+        const photoPromises = hothashes.map(hothash => 
+          apiClient.getPhoto(hothash).catch(err => {
+            console.error(`Failed to load photo ${hothash}:`, err);
+            return null;
+          })
+        );
+        const photos = (await Promise.all(photoPromises)).filter(p => p !== null) as PhotoWithTags[];
+        addPhotos(photos);
+        console.log(`Loaded ${photos.length} photos to PhotoStore`);
+      }
     } catch (err) {
       console.error('Failed to load collection:', err);
       setError(err instanceof Error ? err.message : 'Kunne ikke laste samling');
