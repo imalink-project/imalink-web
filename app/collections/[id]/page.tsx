@@ -72,6 +72,7 @@ export default function CollectionDetailPage() {
   const [showAddPhotosDialog, setShowAddPhotosDialog] = useState(false);
   const [showSlideshow, setShowSlideshow] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [cursorPosition, setCursorPosition] = useState<number | null>(null); // null = end of list
 
   useEffect(() => {
     if (isAuthenticated && collectionId) {
@@ -190,11 +191,16 @@ export default function CollectionDetailPage() {
         // Update existing card
         await apiClient.updateCollectionTextCard(collectionId, editingTextCardIndex, card);
       } else {
-        // Add new card
+        // Add new card - insert at cursor position
         const items: CollectionItem[] = [{ type: 'text', text_card: card }];
-        await apiClient.addItemsToCollection(collectionId, items);
+        if (cursorPosition !== null) {
+          await apiClient.insertItemsAtPosition(collectionId, cursorPosition, items);
+        } else {
+          await apiClient.addItemsToCollection(collectionId, items);
+        }
       }
       await loadCollectionData();
+      setCursorPosition(null); // Reset cursor after insert
     } catch (err) {
       console.error('Failed to save text card:', err);
       throw err;
@@ -218,9 +224,15 @@ export default function CollectionDetailPage() {
   const handleAddPhotos = async (selectedHothashes: string[]) => {
     try {
       const items: CollectionItem[] = selectedHothashes.map(h => ({ type: 'photo', photo_hothash: h }));
-      await apiClient.addItemsToCollection(collectionId, items);
+      // Insert at cursor position if set
+      if (cursorPosition !== null) {
+        await apiClient.insertItemsAtPosition(collectionId, cursorPosition, items);
+      } else {
+        await apiClient.addItemsToCollection(collectionId, items);
+      }
       await loadCollectionData();
       setShowAddPhotosDialog(false);
+      setCursorPosition(null); // Reset cursor after insert
     } catch (err) {
       console.error('Failed to add photos:', err);
       alert('Kunne ikke legge til bilder');
@@ -450,6 +462,8 @@ export default function CollectionDetailPage() {
         onReorder={handleReorderItems}
         onEditTextCard={handleEditTextCard}
         onDeleteItem={handleDeleteItem}
+        cursorPosition={cursorPosition}
+        onCursorChange={setCursorPosition}
         onPhotoClick={(hothash) => {
           const photo = getPhoto(hothash);
           if (photo) {

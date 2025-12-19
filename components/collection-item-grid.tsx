@@ -14,6 +14,8 @@ interface CollectionItemGridProps {
   onEditTextCard: (position: number, card: CollectionTextCard) => void;
   onDeleteItem: (position: number) => void;
   onPhotoClick?: (hothash: string) => void;
+  cursorPosition: number | null; // null = end of list
+  onCursorChange: (position: number | null) => void;
 }
 
 export function CollectionItemGrid({
@@ -23,6 +25,8 @@ export function CollectionItemGrid({
   onEditTextCard,
   onDeleteItem,
   onPhotoClick,
+  cursorPosition,
+  onCursorChange,
 }: CollectionItemGridProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -59,31 +63,43 @@ export function CollectionItemGrid({
             ref={provided.innerRef}
             className="space-y-3"
           >
+            {/* Cursor at start */}
+            {items.length > 0 && (
+              <div
+                onClick={() => onCursorChange(0)}
+                className={`h-1 rounded-full cursor-pointer transition-all ${
+                  cursorPosition === 0
+                    ? 'bg-primary scale-y-150'
+                    : 'bg-muted hover:bg-muted-foreground/20'
+                }`}
+              />
+            )}
+
             {items.map((item, index) => (
-              <Draggable
-                key={`item-${index}`}
-                draggableId={`item-${index}`}
-                index={index}
-              >
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    className={`
-                      rounded-lg border bg-card transition-all
-                      ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary' : 'shadow-sm'}
-                      ${draggedIndex === index ? 'opacity-50' : 'opacity-100'}
-                    `}
-                  >
-                    {item.type === 'photo' ? (
-                      <PhotoItemPreview
-                        hothash={item.photo_hothash}
-                        position={index}
-                        dragHandleProps={provided.dragHandleProps}
-                        onDelete={() => onDeleteItem(index)}
-                        onClick={onPhotoClick ? () => onPhotoClick(item.photo_hothash) : undefined}
-                      />
-                    ) : (
+              <div key={`item-${index}`}>
+                <Draggable
+                  draggableId={`item-${index}`}
+                  index={index}
+                >
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      className={`
+                        rounded-lg border bg-card transition-all
+                        ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary' : 'shadow-sm'}
+                        ${draggedIndex === index ? 'opacity-50' : 'opacity-100'}
+                      `}
+                    >
+                      {item.type === 'photo' ? (
+                        <PhotoItemPreview
+                          hothash={item.photo_hothash}
+                          position={index}
+                          dragHandleProps={provided.dragHandleProps}
+                          onDelete={() => onDeleteItem(index)}
+                          onClick={onPhotoClick ? () => onPhotoClick(item.photo_hothash) : undefined}
+                        />
+                      ) : (
                       <TextCardPreview
                         card={item.text_card}
                         position={index}
@@ -95,6 +111,17 @@ export function CollectionItemGrid({
                   </div>
                 )}
               </Draggable>
+
+              {/* Cursor after this item */}
+              <div
+                onClick={() => onCursorChange(index + 1)}
+                className={`h-1 rounded-full cursor-pointer transition-all ${
+                  cursorPosition === index + 1
+                    ? 'bg-primary scale-y-150'
+                    : 'bg-muted hover:bg-muted-foreground/20'
+                }`}
+              />
+            </div>
             ))}
             {provided.placeholder}
 

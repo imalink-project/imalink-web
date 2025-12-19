@@ -522,6 +522,17 @@ class ApiClient {
     return this.getCollection(id);
   }
 
+  async insertItemsAtPosition(id: number, position: number, items: CollectionItem[]): Promise<Collection> {
+    const response = await fetch(`${this.baseUrl}/collections/${id}/items/insert`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ position, items }),
+    });
+
+    const result = await this.handleResponse<{ collection_id: number; item_count: number; photo_count: number; affected_count: number }>(response);
+    return this.getCollection(id);
+  }
+
   async reorderCollectionItems(id: number, items: CollectionItem[]): Promise<Collection> {
     const response = await fetch(`${this.baseUrl}/collections/${id}/items/reorder`, {
       method: 'PUT',
