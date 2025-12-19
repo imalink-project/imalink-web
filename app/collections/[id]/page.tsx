@@ -191,28 +191,12 @@ export default function CollectionDetailPage() {
         // Update existing card
         await apiClient.updateCollectionTextCard(collectionId, editingTextCardIndex, card);
       } else {
-        // Add new card - insert at cursor position using reorder
-        const newItem: CollectionItem = { type: 'text', text_card: card };
-        
+        // Add new card - insert at cursor position (ATOMIC)
+        const items: CollectionItem[] = [{ type: 'text', text_card: card }];
         if (cursorPosition !== null) {
-          // Insert at cursor position by:
-          // 1. Add to end first
-          await apiClient.addItemsToCollection(collectionId, [newItem]);
-          
-          // 2. Reload to get updated items array
-          await loadCollectionData();
-          const currentItems = (collection as any).items as CollectionItem[];
-          
-          // 3. Reorder: move last item to cursor position
-          const reorderedItems = [...currentItems];
-          const lastItem = reorderedItems.pop()!; // Remove last (newly added)
-          reorderedItems.splice(cursorPosition, 0, lastItem); // Insert at cursor
-          
-          // 4. Send reordered list
-          await apiClient.reorderCollectionItems(collectionId, reorderedItems);
+          await apiClient.insertItemsAtPosition(collectionId, cursorPosition, items);
         } else {
-          // No cursor - just append
-          await apiClient.addItemsToCollection(collectionId, [newItem]);
+          await apiClient.addItemsToCollection(collectionId, items);
         }
       }
       await loadCollectionData();
@@ -242,21 +226,8 @@ export default function CollectionDetailPage() {
       const items: CollectionItem[] = selectedHothashes.map(h => ({ type: 'photo', photo_hothash: h }));
       
       if (cursorPosition !== null) {
-        // Insert at cursor position by:
-        // 1. Add to end first
-        await apiClient.addItemsToCollection(collectionId, items);
-        
-        // 2. Reload to get updated items
-        await loadCollectionData();
-        const currentItems = (collection as any).items as CollectionItem[];
-        
-        // 3. Reorder: move newly added items to cursor position
-        const reorderedItems = [...currentItems];
-        const addedItems = reorderedItems.splice(-items.length, items.length); // Remove last N items
-        reorderedItems.splice(cursorPosition, 0, ...addedItems); // Insert at cursor
-        
-        // 4. Send reordered list
-        await apiClient.reorderCollectionItems(collectionId, reorderedItems);
+        // Insert at cursor position (ATOMIC)
+        await apiClient.insertItemsAtPosition(collectionId, cursorPosition, items);
       } else {
         // No cursor - just append
         await apiClient.addItemsToCollection(collectionId, items);

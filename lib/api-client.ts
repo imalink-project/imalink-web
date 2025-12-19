@@ -522,6 +522,30 @@ class ApiClient {
     return this.getCollection(id);
   }
 
+  // ATOMIC: Insert items at specific position
+  async insertItemsAtPosition(id: number, position: number, items: CollectionItem[]): Promise<Collection> {
+    const response = await fetch(`${this.baseUrl}/collections/${id}/items/insert`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ position, items }),
+    });
+
+    const result = await this.handleResponse<{ collection_id: number; item_count: number; affected_count: number; affected_positions: number[] }>(response);
+    return this.getCollection(id);
+  }
+
+  // ATOMIC: Move items from one position to another
+  async moveCollectionItems(id: number, from_position: number, count: number, to_position: number): Promise<Collection> {
+    const response = await fetch(`${this.baseUrl}/collections/${id}/items/move`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ from_position, count, to_position }),
+    });
+
+    const result = await this.handleResponse<{ collection_id: number; item_count: number; affected_range: number[] }>(response);
+    return this.getCollection(id);
+  }
+
   async reorderCollectionItems(id: number, items: CollectionItem[]): Promise<Collection> {
     const response = await fetch(`${this.baseUrl}/collections/${id}/items/reorder`, {
       method: 'PUT',
@@ -534,12 +558,13 @@ class ApiClient {
   }
 
   async deleteCollectionItem(id: number, position: number): Promise<Collection> {
-    const response = await fetch(`${this.baseUrl}/collections/${id}/items/${position}`, {
+    const response = await fetch(`${this.baseUrl}/collections/${id}/items`, {
       method: 'DELETE',
       headers: this.getHeaders(),
+      body: JSON.stringify({ position, count: 1 }),
     });
 
-    const result = await this.handleResponse<{ collection_id: number; item_count: number; photo_count: number; affected_count: number }>(response);
+    const result = await this.handleResponse<{ collection_id: number; item_count: number; deleted_count: number }>(response);
     return this.getCollection(id);
   }
 
