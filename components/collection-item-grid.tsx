@@ -13,6 +13,7 @@ interface CollectionItemGridProps {
   onReorder: (newItems: CollectionItem[]) => void;
   onEditTextCard: (position: number, card: CollectionTextCard) => void;
   onDeleteItem: (position: number) => void;
+  onPhotoClick?: (hothash: string) => void;
 }
 
 export function CollectionItemGrid({
@@ -21,6 +22,7 @@ export function CollectionItemGrid({
   onReorder,
   onEditTextCard,
   onDeleteItem,
+  onPhotoClick,
 }: CollectionItemGridProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -79,6 +81,7 @@ export function CollectionItemGrid({
                         position={index}
                         dragHandleProps={provided.dragHandleProps}
                         onDelete={() => onDeleteItem(index)}
+                        onClick={onPhotoClick ? () => onPhotoClick(item.photo_hothash) : undefined}
                       />
                     ) : (
                       <TextCardPreview
@@ -116,9 +119,10 @@ interface PhotoItemPreviewProps {
   position: number;
   dragHandleProps: any;
   onDelete: () => void;
+  onClick?: () => void;
 }
 
-function PhotoItemPreview({ hothash, position, dragHandleProps, onDelete }: PhotoItemPreviewProps) {
+function PhotoItemPreview({ hothash, position, dragHandleProps, onDelete, onClick }: PhotoItemPreviewProps) {
   return (
     <div className="flex items-center gap-3 p-3">
       {/* Drag Handle */}
@@ -139,6 +143,7 @@ function PhotoItemPreview({ hothash, position, dragHandleProps, onDelete }: Phot
         hothash={hothash}
         size="medium"
         showMetadata={true}
+        onClick={onClick}
       />
 
       {/* Delete Button */}
@@ -176,11 +181,6 @@ function TextCardPreview({ card, position, dragHandleProps, onEdit, onDelete }: 
       {/* Position Badge */}
       <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-md bg-muted text-xs font-medium">
         {position + 1}
-      </div>
-
-      {/* Text Card Icon */}
-      <div className="flex-shrink-0 flex h-16 w-16 items-center justify-center rounded-md bg-primary/10">
-        <FileText className="h-8 w-8 text-primary" />
       </div>
 
       {/* Text Card Content */}

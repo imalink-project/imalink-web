@@ -45,7 +45,7 @@ export default function CollectionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const { addPhotos } = usePhotoStore();
+  const { addPhotos, getPhoto } = usePhotoStore();
   
   const collectionId = parseInt(params.id as string);
   
@@ -450,6 +450,13 @@ export default function CollectionDetailPage() {
         onReorder={handleReorderItems}
         onEditTextCard={handleEditTextCard}
         onDeleteItem={handleDeleteItem}
+        onPhotoClick={(hothash) => {
+          const photo = getPhoto(hothash);
+          if (photo) {
+            setSelectedPhoto(photo);
+            setShowPhotoDetail(true);
+          }
+        }}
       />
 
       {/* Delete confirmation dialog */}
