@@ -14,7 +14,7 @@ interface CollectionItemGridProps {
   onEditTextCard: (position: number, card: CollectionTextCard) => void;
   onDeleteItem: (position: number) => void;
   onPhotoClick?: (hothash: string) => void;
-  cursorPosition: number | null; // null = end of list
+  cursorPosition: number | null; // Position before item N (0 = top, items.length = end)
   onCursorChange: (position: number | null) => void;
 }
 
@@ -63,20 +63,34 @@ export function CollectionItemGrid({
             ref={provided.innerRef}
             className="space-y-3"
           >
-            {/* Cursor at start */}
-            {items.length > 0 && (
-              <div
-                onClick={() => onCursorChange(0)}
-                className={`h-1 rounded-full cursor-pointer transition-all ${
-                  cursorPosition === 0
-                    ? 'bg-primary scale-y-150'
-                    : 'bg-muted hover:bg-muted-foreground/20'
-                }`}
-              />
-            )}
-
             {items.map((item, index) => (
-              <div key={`item-${index}`}>
+              <div key={`item-${index}`} className="relative">
+                {/* Cursor indicator BEFORE this item */}
+                {cursorPosition === index && (
+                  <div className="absolute -top-4 left-0 right-0 flex items-center gap-2 py-1">
+                    <div className="flex-1 h-1 bg-primary rounded-full shadow-lg shadow-primary/50" />
+                    <button
+                      onClick={() => onCursorChange(null)}
+                      className="px-2 py-0.5 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
+                    >
+                      ✕ Kursor
+                    </button>
+                  </div>
+                )}
+
+                {/* Line number button */}
+                <button
+                  onClick={() => onCursorChange(index)}
+                  className={`absolute -left-12 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded text-sm font-mono transition-all ${
+                    cursorPosition === index
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                  title={`Sett kursor før element ${index + 1}`}
+                >
+                  {index + 1}
+                </button>
+
                 <Draggable
                   draggableId={`item-${index}`}
                   index={index}
@@ -111,18 +125,35 @@ export function CollectionItemGrid({
                   </div>
                 )}
               </Draggable>
-
-              {/* Cursor after this item */}
-              <div
-                onClick={() => onCursorChange(index + 1)}
-                className={`h-1 rounded-full cursor-pointer transition-all ${
-                  cursorPosition === index + 1
-                    ? 'bg-primary scale-y-150'
-                    : 'bg-muted hover:bg-muted-foreground/20'
-                }`}
-              />
             </div>
             ))}
+
+            {/* "Append" button - cursor at end */}
+            <div className="relative">
+              {cursorPosition === items.length && (
+                <div className="absolute -top-4 left-0 right-0 flex items-center gap-2 py-1">
+                  <div className="flex-1 h-1 bg-primary rounded-full shadow-lg shadow-primary/50" />
+                  <button
+                    onClick={() => onCursorChange(null)}
+                    className="px-2 py-0.5 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
+                  >
+                    ✕ Kursor
+                  </button>
+                </div>
+              )}
+
+              <button
+                onClick={() => onCursorChange(items.length)}
+                className={`w-full py-3 border-2 border-dashed rounded-lg text-sm transition-all ${
+                  cursorPosition === items.length
+                    ? 'border-primary bg-primary/5 text-primary'
+                    : 'border-muted-foreground/20 text-muted-foreground hover:border-muted-foreground/40 hover:bg-muted/30'
+                }`}
+              >
+                {cursorPosition === items.length ? '← Nye elementer legges til her' : 'Klikk for å legge til på slutten'}
+              </button>
+            </div>
+
             {provided.placeholder}
 
             {items.length === 0 && (

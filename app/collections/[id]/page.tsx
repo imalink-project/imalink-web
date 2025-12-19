@@ -72,7 +72,7 @@ export default function CollectionDetailPage() {
   const [showAddPhotosDialog, setShowAddPhotosDialog] = useState(false);
   const [showSlideshow, setShowSlideshow] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [cursorPosition, setCursorPosition] = useState<number | null>(null); // null = end of list
+  const [cursorPosition, setCursorPosition] = useState<number | null>(null); // null = no cursor (append mode)
 
   useEffect(() => {
     if (isAuthenticated && collectionId) {
@@ -456,22 +456,24 @@ export default function CollectionDetailPage() {
       </div>
 
       {/* Items grid */}
-      <CollectionItemGrid
-        items={items}
-        collectionId={collectionId}
-        onReorder={handleReorderItems}
-        onEditTextCard={handleEditTextCard}
-        onDeleteItem={handleDeleteItem}
-        cursorPosition={cursorPosition}
-        onCursorChange={setCursorPosition}
-        onPhotoClick={(hothash) => {
-          const photo = getPhoto(hothash);
-          if (photo) {
-            setSelectedPhoto(photo);
-            setShowPhotoDetail(true);
-          }
-        }}
-      />
+      <div className="ml-12">
+        <CollectionItemGrid
+          items={items}
+          collectionId={collectionId}
+          onReorder={handleReorderItems}
+          onEditTextCard={handleEditTextCard}
+          onDeleteItem={handleDeleteItem}
+          cursorPosition={cursorPosition}
+          onCursorChange={setCursorPosition}
+          onPhotoClick={(hothash) => {
+            const photo = getPhoto(hothash);
+            if (photo) {
+              setSelectedPhoto(photo);
+              setShowPhotoDetail(true);
+            }
+          }}
+        />
+      </div>
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
