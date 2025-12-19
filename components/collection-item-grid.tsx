@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { FileText, GripVertical, Pencil, Trash2 } from 'lucide-react';
+import { FileText, GripVertical, Pencil, Trash2, Calendar, MapPin, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { CollectionItem, CollectionTextCard } from '@/lib/types';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { CollectionItem, CollectionTextCard, CollectionPhotoItem } from '@/lib/types';
 import { apiClient } from '@/lib/api-client';
 
 interface CollectionItemGridProps {
@@ -75,7 +76,7 @@ export function CollectionItemGrid({
                   >
                     {item.type === 'photo' ? (
                       <PhotoItemPreview
-                        hothash={item.photo_hothash}
+                        item={item}
                         position={index}
                         dragHandleProps={provided.dragHandleProps}
                         onDelete={() => onDeleteItem(index)}
@@ -112,16 +113,36 @@ export function CollectionItemGrid({
 }
 
 interface PhotoItemPreviewProps {
-  hothash: string;
+  item: CollectionPhotoItem;
   position: number;
   dragHandleProps: any;
   onDelete: () => void;
 }
 
-function PhotoItemPreview({ hothash, position, dragHandleProps, onDelete }: PhotoItemPreviewProps) {
-  const hotpreviewUrl = apiClient.getHotPreviewUrl(hothash);
+function PhotoItemPreview({ item, position, dragHandleProps, onDelete }: PhotoItemPreviewProps) {
+  const hotpreviewUrl = apiClient.getHotPreviewUrl(item.photo_hothash);
+  const photo = item.photo;
 
-  return (
+  // Format date/time
+  const formatDateTime = (dateString: string | null | undefined) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString('no-NO', { 
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Format location
+  const formatLocation = (lat: number | null | undefined, lon: number | null | undefined) => {
+    if (!lat || !lon) return null;
+    return `${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
+  };
+
+  const thumbnailContent = (
     <div className="flex items-center gap-3 p-3">
       {/* Drag Handle */}
       <div
@@ -143,10 +164,31 @@ function PhotoItemPreview({ hothash, position, dragHandleProps, onDelete }: Phot
         className="h-16 w-16 rounded-md object-cover"
       />
 
-      {/* Photo Label */}
+      {/* Photo Label & Metadata */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium">Photo</p>
-        <p className="text-xs text-muted-foreground truncate">{hothash.slice(0, 16)}...</p>
+        <p className="text-xs text-muted-foreground truncate">{item.photo_hothash.slice(0, 16)}...</p>
+        
+        {/* Metadata icons (if available) */}
+        {photo && (
+          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+            {photo.taken_at && (
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                <span className="truncate">{formatDateTime(photo.taken_at)}</span>
+              </div>
+            )}
+            {photo.has_gps && (
+              <MapPin className="h-3 w-3" />
+            )}
+            {photo.author && (
+              <div className="flex items-center gap-1">
+                <User className="h-3 w-3" />
+                <span className="truncate">{photo.author.name}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Delete Button */}
@@ -160,6 +202,58 @@ function PhotoItemPreview({ hothash, position, dragHandleProps, onDelete }: Phot
       </Button>
     </div>
   );
+
+  // If we have full photo metadata, wrap in tooltip
+  if (photo && (photo.taken_at || photo.has_gps || photo.author)) {
+    return (
+      <TooltipProvider>
+        <Tooltip delayDuration={300}>
+          <TooltipTrigger asChild>
+            {thumbnailContent}
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            <div className="space-y-2">
+              {photo.taken_at && (
+                <div className="flex items-start gap-2">
+                  <Calendar className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-xs">Tatt</p>
+                    <p className="text-xs">{formatDateTime(photo.taken_at)}</p>
+                  </div>
+                </div>
+              )}
+              {photo.has_gps && photo.gps_latitude && photo.gps_longitude && (
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-xs">Posisjon</p>
+                    <p className="text-xs">{formatLocation(photo.gps_latitude, photo.gps_longitude)}</p>
+                  </div>
+                </div>
+              )}
+              {photo.author && (
+                <div className="flex items-start gap-2">
+                  <User className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-xs">Fotograf</p>
+                    <p className="text-xs">{photo.author.name}</p>
+                  </div>
+                </div>
+              )}
+              {photo.rating > 0 && (
+                <div className="flex items-center gap-1 text-xs">
+                  <span>★</span>
+                  <span>{photo.rating}/5</span>
+                </div>
+              )}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return thumbnailContent;
 }
 
 interface TextCardPreviewProps {

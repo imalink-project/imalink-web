@@ -292,6 +292,7 @@ export default function CollectionDetailPage() {
 
   const items = (collection as any).items as CollectionItem[] || [];
   console.log('Rendering with items:', items);
+  console.log('First photo item:', items.find(i => i.type === 'photo'));
 
   const handleToggleSortOrder = async () => {
     // Reverse the items array and send to backend

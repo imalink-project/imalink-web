@@ -55,6 +55,7 @@ export interface CollectionTextCard {
 export interface CollectionPhotoItem {
   type: 'photo';
   photo_hothash: string;
+  photo?: PhotoWithTags; // Full photo data with metadata (when included by backend)
 }
 
 export interface CollectionTextItem {
