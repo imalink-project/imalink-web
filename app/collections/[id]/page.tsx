@@ -70,7 +70,6 @@ export default function CollectionDetailPage() {
   const [showAddPhotosDialog, setShowAddPhotosDialog] = useState(false);
   const [showSlideshow, setShowSlideshow] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc'); // desc = newest first
 
   useEffect(() => {
     if (isAuthenticated && collectionId) {
@@ -221,7 +220,7 @@ export default function CollectionDetailPage() {
         collectionName: collection.name,
         collectionDescription: collection.description || undefined,
         collectionId: collectionId,
-        items: sortedItems,
+        items: items,
       });
       
       // Download the ZIP file
@@ -294,11 +293,17 @@ export default function CollectionDetailPage() {
   const items = (collection as any).items as CollectionItem[] || [];
   console.log('Rendering with items:', items);
 
-  // Apply sorting to items
-  const sortedItems = sortOrder === 'desc' ? items : [...items].reverse();
-
-  const handleToggleSortOrder = () => {
-    setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+  const handleToggleSortOrder = async () => {
+    // Reverse the items array and send to backend
+    const reversedItems = [...items].reverse();
+    
+    try {
+      await apiClient.reorderCollectionItems(collectionId, reversedItems);
+      await loadCollectionData();
+    } catch (err) {
+      console.error('Failed to reorder items:', err);
+      alert('Kunne ikke endre sortering');
+    }
   };
 
   return (
@@ -402,7 +407,7 @@ export default function CollectionDetailPage() {
           <>
             <Button variant="outline" onClick={handleToggleSortOrder}>
               <ArrowUpDown className="mr-2 h-4 w-4" />
-              {sortOrder === 'desc' ? 'Nyeste først' : 'Eldste først'}
+              Reverser rekkefølge
             </Button>
             <Button variant="outline" onClick={() => setShowSlideshow(true)}>
               <Presentation className="mr-2 h-4 w-4" />
@@ -418,7 +423,7 @@ export default function CollectionDetailPage() {
 
       {/* Items grid */}
       <CollectionItemGrid
-        items={sortedItems}
+        items={items}
         collectionId={collectionId}
         onReorder={handleReorderItems}
         onEditTextCard={handleEditTextCard}
@@ -485,7 +490,7 @@ export default function CollectionDetailPage() {
 
       {/* Slideshow */}
       <CollectionSlideshow
-        items={sortedItems}
+        items={items}
         isOpen={showSlideshow}
         onClose={() => setShowSlideshow(false)}
       />
