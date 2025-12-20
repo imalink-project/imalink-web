@@ -502,6 +502,32 @@ export function PhotoDetailDialog({
                 <MapPin className="h-4 w-4" />
                 Location
               </Label>
+              
+              {/* Google Maps Link */}
+              {latitude && longitude && (
+                <div className="mb-3 flex items-center gap-2 p-2 rounded-md bg-muted/50">
+                  <a
+                    href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:underline flex items-center gap-1"
+                  >
+                    <MapPin className="h-3 w-3" />
+                    {latitude}, {longitude}
+                  </a>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${latitude}, ${longitude}`);
+                    }}
+                  >
+                    Kopier
+                  </Button>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label htmlFor="latitude" className="text-xs">
