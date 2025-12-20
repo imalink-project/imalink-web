@@ -603,6 +603,16 @@ class ApiClient {
     return this.getCollection(id);
   }
 
+  async toggleItemVisibility(collectionId: number, position: number, visible: boolean): Promise<{ collection_id: number; position: number; visible: boolean; item_count: number; visible_count: number }> {
+    const response = await fetch(`${this.baseUrl}/collections/${collectionId}/items/${position}/visibility`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ visible }),
+    });
+
+    return this.handleResponse(response);
+  }
+
   async cleanupCollectionPhotos(id: number): Promise<{ collection_id: number; removed_count: number }> {
     const response = await fetch(`${this.baseUrl}/collections/${id}/cleanup`, {
       method: 'POST',

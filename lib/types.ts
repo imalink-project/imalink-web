@@ -55,12 +55,14 @@ export interface CollectionTextCard {
 export interface CollectionPhotoItem {
   type: 'photo';
   photo_hothash: string;
+  visible?: boolean; // Default true if undefined (slideshow visibility)
   photo?: PhotoWithTags; // Full photo data with metadata (when included by backend)
 }
 
 export interface CollectionTextItem {
   type: 'text';
   text_card: CollectionTextCard;
+  visible?: boolean; // Default true if undefined (slideshow visibility)
 }
 
 export type CollectionItem = CollectionPhotoItem | CollectionTextItem;

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { FileText, GripVertical, Pencil, Trash2 } from 'lucide-react';
+import { FileText, GripVertical, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PhotoThumbnail } from '@/components/photo-thumbnail';
 import type { CollectionItem, CollectionTextCard } from '@/lib/types';
@@ -17,6 +17,7 @@ interface CollectionItemGridProps {
   cursorPosition: number | null; // Position before item N (0 = top, items.length = end)
   onCursorChange: (position: number | null) => void;
   onAddTextCard?: () => void; // Callback to add text card at cursor
+  onToggleVisibility?: (position: number, visible: boolean) => void; // Toggle item visibility
 }
 
 export function CollectionItemGrid({
@@ -29,6 +30,7 @@ export function CollectionItemGrid({
   cursorPosition,
   onCursorChange,
   onAddTextCard,
+  onToggleVisibility,
 }: CollectionItemGridProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -113,18 +115,22 @@ export function CollectionItemGrid({
                       {item.type === 'photo' ? (
                         <PhotoItemPreview
                           hothash={item.photo_hothash}
+                          visible={item.visible !== false}
                           position={index}
                           dragHandleProps={provided.dragHandleProps}
                           onDelete={() => onDeleteItem(index)}
+                          onToggleVisibility={onToggleVisibility}
                           onClick={onPhotoClick ? () => onPhotoClick(item.photo_hothash) : undefined}
                         />
                       ) : (
                       <TextCardPreview
                         card={item.text_card}
+                        visible={item.visible !== false}
                         position={index}
                         dragHandleProps={provided.dragHandleProps}
                         onEdit={() => onEditTextCard(index, item.text_card)}
                         onDelete={() => onDeleteItem(index)}
+                        onToggleVisibility={onToggleVisibility}
                       />
                     )}
                   </div>
@@ -182,15 +188,17 @@ export function CollectionItemGrid({
 
 interface PhotoItemPreviewProps {
   hothash: string;
+  visible: boolean;
   position: number;
   dragHandleProps: any;
   onDelete: () => void;
+  onToggleVisibility?: (position: number, visible: boolean) => void;
   onClick?: () => void;
 }
 
-function PhotoItemPreview({ hothash, position, dragHandleProps, onDelete, onClick }: PhotoItemPreviewProps) {
+function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelete, onToggleVisibility, onClick }: PhotoItemPreviewProps) {
   return (
-    <div className="flex items-center gap-3 p-3">
+    <div className={`flex items-center gap-3 p-3 transition-all ${!visible ? 'opacity-50 bg-muted/30' : ''}`}>
       {/* Drag Handle */}
       <div
         {...dragHandleProps}
@@ -212,6 +220,23 @@ function PhotoItemPreview({ hothash, position, dragHandleProps, onDelete, onClic
         onClick={onClick}
       />
 
+      {/* Visibility Toggle */}
+      {onToggleVisibility && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onToggleVisibility(position, !visible)}
+          className="flex-shrink-0"
+          title={visible ? 'Skjul i lysbildevisning' : 'Vis i lysbildevisning'}
+        >
+          {visible ? (
+            <Eye className="h-4 w-4" />
+          ) : (
+            <EyeOff className="h-4 w-4 text-muted-foreground" />
+          )}
+        </Button>
+      )}
+
       {/* Delete Button */}
       <Button
         variant="ghost"
@@ -227,15 +252,17 @@ function PhotoItemPreview({ hothash, position, dragHandleProps, onDelete, onClic
 
 interface TextCardPreviewProps {
   card: CollectionTextCard;
+  visible: boolean;
   position: number;
   dragHandleProps: any;
   onEdit: () => void;
   onDelete: () => void;
+  onToggleVisibility?: (position: number, visible: boolean) => void;
 }
 
-function TextCardPreview({ card, position, dragHandleProps, onEdit, onDelete }: TextCardPreviewProps) {
+function TextCardPreview({ card, visible, position, dragHandleProps, onEdit, onDelete, onToggleVisibility }: TextCardPreviewProps) {
   return (
-    <div className="flex items-start gap-3 p-3">
+    <div className={`flex items-start gap-3 p-3 transition-all ${!visible ? 'opacity-50 bg-muted/30' : ''}`}>
       {/* Drag Handle */}
       <div
         {...dragHandleProps}
@@ -259,6 +286,22 @@ function TextCardPreview({ card, position, dragHandleProps, onEdit, onDelete }: 
 
       {/* Action Buttons */}
       <div className="flex-shrink-0 flex gap-1">
+        {/* Visibility Toggle */}
+        {onToggleVisibility && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onToggleVisibility(position, !visible)}
+            title={visible ? 'Skjul i lysbildevisning' : 'Vis i lysbildevisning'}
+          >
+            {visible ? (
+              <Eye className="h-4 w-4" />
+            ) : (
+              <EyeOff className="h-4 w-4 text-muted-foreground" />
+            )}
+          </Button>
+        )}
+        
         <Button
           variant="ghost"
           size="sm"

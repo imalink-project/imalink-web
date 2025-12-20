@@ -29,6 +29,8 @@ import {
   Presentation,
   Download,
   ArrowUpDown,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -232,6 +234,60 @@ export default function CollectionDetailPage() {
     } catch (err) {
       console.error('Failed to delete item:', err);
       alert('Kunne ikke slette element');
+    }
+  };
+
+  const handleToggleVisibility = async (position: number, visible: boolean) => {
+    try {
+      await apiClient.toggleItemVisibility(collectionId, position, visible);
+      await loadCollectionData();
+    } catch (err) {
+      console.error('Failed to toggle visibility:', err);
+      alert('Kunne ikke endre synlighet');
+    }
+  };
+
+  const handleShowAll = async () => {
+    if (!collection) return;
+    
+    try {
+      const items = (collection as any).items as CollectionItem[] || [];
+      
+      // Find all hidden items and show them
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].visible === false) {
+          await apiClient.toggleItemVisibility(collectionId, i, true);
+        }
+      }
+      
+      await loadCollectionData();
+    } catch (err) {
+      console.error('Failed to show all items:', err);
+      alert('Kunne ikke vise alle elementer');
+    }
+  };
+
+  const handleHideAll = async () => {
+    if (!collection) return;
+    
+    if (!confirm('Er du sikker på at du vil skjule alle elementer fra lysbildevisning?')) {
+      return;
+    }
+    
+    try {
+      const items = (collection as any).items as CollectionItem[] || [];
+      
+      // Hide all items
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].visible !== false) {
+          await apiClient.toggleItemVisibility(collectionId, i, false);
+        }
+      }
+      
+      await loadCollectionData();
+    } catch (err) {
+      console.error('Failed to hide all items:', err);
+      alert('Kunne ikke skjule alle elementer');
     }
   };
 
@@ -477,6 +533,23 @@ export default function CollectionDetailPage() {
         </Button>
         {items.length > 0 && (
           <>
+            <div className="mx-2 h-6 w-px bg-border" />
+            
+            <Button variant="outline" size="sm" onClick={handleShowAll}>
+              <Eye className="mr-2 h-4 w-4" />
+              Vis alle
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleHideAll}>
+              <EyeOff className="mr-2 h-4 w-4" />
+              Skjul alle
+            </Button>
+            
+            <span className="text-sm text-muted-foreground">
+              {items.filter(item => item.visible !== false).length} av {items.length} synlige
+            </span>
+            
+            <div className="mx-2 h-6 w-px bg-border" />
+            
             <Button variant="outline" onClick={handleToggleSortOrder}>
               <ArrowUpDown className="mr-2 h-4 w-4" />
               Reverser rekkefølge
@@ -501,6 +574,7 @@ export default function CollectionDetailPage() {
           onReorder={handleReorderItems}
           onEditTextCard={handleEditTextCard}
           onDeleteItem={handleDeleteItem}
+          onToggleVisibility={handleToggleVisibility}
           cursorPosition={cursorPosition}
           onCursorChange={setCursorPosition}
           onAddTextCard={() => setShowTextEditor(true)}

@@ -19,11 +19,14 @@ export function CollectionSlideshow({
   isOpen,
   onClose,
 }: CollectionSlideshowProps) {
+  // Filter out invisible items for slideshow
+  const visibleItems = items.filter(item => item.visible !== false);
+  
   const [currentIndex, setCurrentIndex] = useState(startIndex);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const currentItem = items[currentIndex];
-  const totalItems = items.length;
+  const currentItem = visibleItems[currentIndex];
+  const totalItems = visibleItems.length;
 
   // Auto-play functionality
   useEffect(() => {
