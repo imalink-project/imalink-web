@@ -73,6 +73,10 @@ export default function CollectionDetailPage() {
   const [showSlideshow, setShowSlideshow] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [cursorPosition, setCursorPosition] = useState<number | null>(null); // null = no cursor (append mode)
+  
+  const [photoLoadProgress, setPhotoLoadProgress] = useState(0);
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
+  const [totalPhotosToLoad, setTotalPhotosToLoad] = useState(0);
 
   useEffect(() => {
     if (isAuthenticated && collectionId) {
@@ -100,15 +104,25 @@ export default function CollectionDetailPage() {
       
       if (hothashes.length > 0) {
         console.log(`Loading ${hothashes.length} photos for PhotoStore...`);
-        const photoPromises = hothashes.map(hothash => 
-          apiClient.getPhoto(hothash).catch(err => {
-            console.error(`Failed to load photo ${hothash}:`, err);
-            return null;
-          })
-        );
-        const photos = (await Promise.all(photoPromises)).filter(p => p !== null) as PhotoWithTags[];
-        addPhotos(photos);
-        console.log(`Loaded ${photos.length} photos to PhotoStore`);
+        setIsLoadingPhotos(true);
+        setTotalPhotosToLoad(hothashes.length);
+        setPhotoLoadProgress(0);
+        
+        const photos: PhotoWithTags[] = [];
+        for (let i = 0; i < hothashes.length; i++) {
+          try {
+            const photo = await apiClient.getPhoto(hothashes[i]);
+            if (photo) {
+              addPhotos([photo as PhotoWithTags]); // Add progressively so they appear as they load
+            }
+          } catch (err) {
+            console.error(`Failed to load photo ${hothashes[i]}:`, err);
+          }
+          setPhotoLoadProgress(i + 1);
+        }
+        
+        setIsLoadingPhotos(false);
+        console.log(`Loaded ${hothashes.length} photos to PhotoStore`);
       }
     } catch (err) {
       console.error('Failed to load collection:', err);
@@ -427,6 +441,26 @@ export default function CollectionDetailPage() {
                 Slett
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photo loading progress */}
+      {isLoadingPhotos && (
+        <div className="mb-6 rounded-lg border bg-card p-4">
+          <div className="mb-2 flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">
+              Laster fotos til PhotoStore...
+            </span>
+            <span className="font-medium">
+              {photoLoadProgress} / {totalPhotosToLoad}
+            </span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+            <div
+              className="h-full bg-primary transition-all duration-300"
+              style={{ width: `${(photoLoadProgress / totalPhotosToLoad) * 100}%` }}
+            />
           </div>
         </div>
       )}
