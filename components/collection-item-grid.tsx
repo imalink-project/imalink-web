@@ -253,12 +253,12 @@ function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelet
           </Button>
         </div>
 
-        {/* Full size hotpreview image */}
-        <div className="relative max-w-[150px]">
+        {/* Full size hotpreview image - contained within 150x150 like a slideshow */}
+        <div className="relative flex items-center justify-center w-[150px] h-[150px]">
           <img
             src={hotpreviewUrl}
             alt={`Photo ${position + 1}`}
-            className="max-w-[150px] h-auto rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+            className="max-w-[150px] max-h-[150px] w-auto h-auto object-contain rounded-md cursor-pointer hover:opacity-90 transition-opacity"
             onClick={onClick}
             loading="lazy"
           />
