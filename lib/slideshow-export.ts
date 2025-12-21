@@ -72,6 +72,7 @@ async function generateHTML(collectionName: string, collectionDescription: strin
       return {
         type: 'photo',
         src: `images/photo-${photoIndex}.jpg`,
+        caption: item.caption || null,
       };
     } else {
       return {
@@ -392,6 +393,24 @@ async function generateHTML(collectionName: string, collectionDescription: strin
       user-select: none;
     }
 
+    /* Photo caption */
+    .photo-caption {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 60%;
+      text-align: center;
+      color: rgba(255,255,255,0.9);
+      font-size: 1rem;
+      line-height: 1.5;
+      padding: 12px 24px;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(10px);
+      border-radius: 8px;
+      z-index: 10;
+    }
+
     .text-slide {
       max-width: 800px;
       padding: 60px;
@@ -655,6 +674,14 @@ async function generateHTML(collectionName: string, collectionDescription: strin
           img.src = slide.src;
           img.alt = 'Slide ' + (index + 1);
           div.appendChild(img);
+          
+          // Add caption if present
+          if (slide.caption) {
+            const captionDiv = document.createElement('div');
+            captionDiv.className = 'photo-caption';
+            captionDiv.textContent = slide.caption;
+            div.appendChild(captionDiv);
+          }
         } else {
           const textDiv = document.createElement('div');
           textDiv.className = 'text-slide';
