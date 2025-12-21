@@ -217,9 +217,9 @@ function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelet
       </div>
 
       {/* Photo - different display based on viewMode */}
-      <div className="relative">
-        {viewMode === 'full' ? (
-          // Stor modus: 150x150 uncropped preview
+      {viewMode === 'full' ? (
+        // Stor modus: 150x150 uncropped preview with metadata below
+        <div className="relative flex flex-col gap-2">
           <div className="relative flex items-center justify-center w-[150px] h-[150px]">
             <img
               src={hotpreviewUrl}
@@ -228,23 +228,38 @@ function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelet
               onClick={onClick}
               loading="lazy"
             />
+            {!visible && (
+              <div className="absolute top-1 right-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
+                <EyeOff className="h-3 w-3" />
+                <span>Skjult</span>
+              </div>
+            )}
           </div>
-        ) : (
-          // Kompakt modus: cropped thumbnail with metadata
+          <PhotoThumbnail 
+            hothash={hothash}
+            size="small"
+            showMetadata={true}
+            onClick={onClick}
+            className="opacity-60"
+          />
+        </div>
+      ) : (
+        // Kompakt modus: cropped thumbnail with metadata
+        <div className="relative">
           <PhotoThumbnail 
             hothash={hothash}
             size="medium"
             showMetadata={true}
             onClick={onClick}
           />
-        )}
-        {!visible && (
-          <div className="absolute top-1 right-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
-            <EyeOff className="h-3 w-3" />
-            <span>Skjult</span>
-          </div>
-        )}
-      </div>
+          {!visible && (
+            <div className="absolute top-1 right-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
+              <EyeOff className="h-3 w-3" />
+              <span>Skjult</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Visibility Toggle */}
       {onToggleVisibility && (
