@@ -5,6 +5,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { FileText, GripVertical, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PhotoThumbnail } from '@/components/photo-thumbnail';
+import { apiClient } from '@/lib/api-client';
 import type { CollectionItem, CollectionTextCard } from '@/lib/types';
 
 interface CollectionItemGridProps {
@@ -18,6 +19,7 @@ interface CollectionItemGridProps {
   onCursorChange: (position: number | null) => void;
   onAddTextCard?: () => void; // Callback to add text card at cursor
   onToggleVisibility?: (position: number, visible: boolean) => void; // Toggle item visibility
+  viewMode?: 'compact' | 'full'; // Display mode: compact (cropped) or full (uncropped)
 }
 
 export function CollectionItemGrid({
@@ -31,6 +33,7 @@ export function CollectionItemGrid({
   onCursorChange,
   onAddTextCard,
   onToggleVisibility,
+  viewMode = 'compact',
 }: CollectionItemGridProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -121,6 +124,7 @@ export function CollectionItemGrid({
                           onDelete={() => onDeleteItem(index)}
                           onToggleVisibility={onToggleVisibility}
                           onClick={onPhotoClick ? () => onPhotoClick(item.photo_hothash) : undefined}
+                          viewMode={viewMode}
                         />
                       ) : (
                       <TextCardPreview
@@ -194,9 +198,82 @@ interface PhotoItemPreviewProps {
   onDelete: () => void;
   onToggleVisibility?: (position: number, visible: boolean) => void;
   onClick?: () => void;
+  viewMode?: 'compact' | 'full';
 }
 
-function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelete, onToggleVisibility, onClick }: PhotoItemPreviewProps) {
+function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelete, onToggleVisibility, onClick, viewMode = 'compact' }: PhotoItemPreviewProps) {
+  const hotpreviewUrl = apiClient.getHotPreviewUrl(hothash);
+  
+  if (viewMode === 'full') {
+    // Full mode: show uncropped hotpreview at full width
+    return (
+      <div className={`flex flex-col gap-3 p-3 transition-all relative ${!visible ? 'border-l-4 border-l-muted-foreground/30' : ''}`}>
+        {/* Top bar with controls */}
+        <div className="flex items-center gap-3">
+          {/* Drag Handle */}
+          <div
+            {...dragHandleProps}
+            className="flex-shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
+          >
+            <GripVertical className="h-5 w-5" />
+          </div>
+
+          {/* Position Badge */}
+          <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-md bg-muted text-xs font-medium">
+            {position + 1}
+          </div>
+
+          <div className="flex-1" />
+
+          {/* Visibility Toggle */}
+          {onToggleVisibility && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onToggleVisibility(position, !visible)}
+              className="flex-shrink-0"
+              title={visible ? 'Skjul i lysbildevisning' : 'Vis i lysbildevisning'}
+            >
+              {visible ? (
+                <Eye className="h-4 w-4" />
+              ) : (
+                <EyeOff className="h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
+          )}
+
+          {/* Delete Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDelete}
+            className="flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Full size hotpreview image */}
+        <div className="relative w-full">
+          <img
+            src={hotpreviewUrl}
+            alt={`Photo ${position + 1}`}
+            className="w-full h-auto rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+            onClick={onClick}
+            loading="lazy"
+          />
+          {!visible && (
+            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+              <EyeOff className="h-3 w-3" />
+              <span>Skjult</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Compact mode: original layout with cropped thumbnail
   return (
     <div className={`flex items-center gap-3 p-3 transition-all relative ${!visible ? 'border-l-4 border-l-muted-foreground/30' : ''}`}>
       {/* Drag Handle */}

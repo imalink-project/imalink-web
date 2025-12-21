@@ -31,6 +31,8 @@ import {
   ArrowUpDown,
   Eye,
   EyeOff,
+  LayoutGrid,
+  Maximize2,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -75,6 +77,7 @@ export default function CollectionDetailPage() {
   const [showSlideshow, setShowSlideshow] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [cursorPosition, setCursorPosition] = useState<number | null>(null); // null = no cursor (append mode)
+  const [viewMode, setViewMode] = useState<'compact' | 'full'>('compact');
   
   const [photoLoadProgress, setPhotoLoadProgress] = useState(0);
   const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
@@ -605,6 +608,28 @@ export default function CollectionDetailPage() {
             
             <div className="mx-2 h-6 w-px bg-border" />
             
+            {/* View mode toggle */}
+            <Button 
+              variant={viewMode === 'compact' ? 'default' : 'outline'} 
+              size="sm"
+              onClick={() => setViewMode('compact')}
+              title="Kompakt visning (beskåret)"
+            >
+              <LayoutGrid className="mr-2 h-4 w-4" />
+              Kompakt
+            </Button>
+            <Button 
+              variant={viewMode === 'full' ? 'default' : 'outline'} 
+              size="sm"
+              onClick={() => setViewMode('full')}
+              title="Full visning (ikke beskåret)"
+            >
+              <Maximize2 className="mr-2 h-4 w-4" />
+              Full
+            </Button>
+            
+            <div className="mx-2 h-6 w-px bg-border" />
+            
             <Button variant="outline" onClick={handleToggleSortOrder}>
               <ArrowUpDown className="mr-2 h-4 w-4" />
               Reverser rekkefølge
@@ -633,6 +658,7 @@ export default function CollectionDetailPage() {
           cursorPosition={cursorPosition}
           onCursorChange={setCursorPosition}
           onAddTextCard={() => setShowTextEditor(true)}
+          viewMode={viewMode}
           onPhotoClick={(hothash) => {
             const photo = getPhoto(hothash);
             if (photo) {
