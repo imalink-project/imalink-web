@@ -20,6 +20,7 @@ interface CollectionItemGridProps {
   onCursorChange: (position: number | null) => void;
   onAddTextCard?: () => void; // Callback to add text card at cursor
   onToggleVisibility?: (position: number, visible: boolean) => void; // Toggle item visibility
+  onEditCaption?: (position: number, currentCaption: string | null) => void; // Edit photo caption
   viewMode?: 'compact' | 'full'; // Display mode: compact (cropped) or full (uncropped)
 }
 
@@ -34,6 +35,7 @@ export function CollectionItemGrid({
   onCursorChange,
   onAddTextCard,
   onToggleVisibility,
+  onEditCaption,
   viewMode = 'compact',
 }: CollectionItemGridProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -120,10 +122,12 @@ export function CollectionItemGrid({
                         <PhotoItemPreview
                           hothash={item.photo_hothash}
                           visible={item.visible !== false}
+                          caption={item.caption}
                           position={index}
                           dragHandleProps={provided.dragHandleProps}
                           onDelete={() => onDeleteItem(index)}
                           onToggleVisibility={onToggleVisibility}
+                          onEditCaption={onEditCaption}
                           onClick={onPhotoClick ? () => onPhotoClick(item.photo_hothash) : undefined}
                           viewMode={viewMode}
                         />
@@ -193,7 +197,7 @@ export function CollectionItemGrid({
 }
 
 // PhotoMetadata - Shows photo metadata as text (for stor mode)
-function PhotoMetadata({ hothash }: { hothash: string }) {
+function PhotoMetadata({ hothash, caption }: { hothash: string; caption?: string | null }) {
   const { getPhoto } = usePhotoStore();
   const photo = getPhoto(hothash);
 
@@ -232,6 +236,11 @@ function PhotoMetadata({ hothash }: { hothash: string }) {
           </div>
         )}
       </div>
+      {caption && (
+        <p className="mt-2 text-sm text-muted-foreground italic line-clamp-2">
+          {caption}
+        </p>
+      )}
     </div>
   );
 }
@@ -239,15 +248,17 @@ function PhotoMetadata({ hothash }: { hothash: string }) {
 interface PhotoItemPreviewProps {
   hothash: string;
   visible: boolean;
+  caption?: string | null;
   position: number;
   dragHandleProps: any;
   onDelete: () => void;
   onToggleVisibility?: (position: number, visible: boolean) => void;
+  onEditCaption?: (position: number, caption: string | null) => void;
   onClick?: () => void;
   viewMode?: 'compact' | 'full';
 }
 
-function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelete, onToggleVisibility, onClick, viewMode = 'compact' }: PhotoItemPreviewProps) {
+function PhotoItemPreview({ hothash, visible, caption, position, dragHandleProps, onDelete, onToggleVisibility, onEditCaption, onClick, viewMode = 'compact' }: PhotoItemPreviewProps) {
   const hotpreviewUrl = apiClient.getHotPreviewUrl(hothash);
   
   // Same layout for both modes, only difference is the image display
@@ -280,7 +291,7 @@ function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelet
               </div>
             )}
           </div>
-          <PhotoMetadata hothash={hothash} />
+          <PhotoMetadata hothash={hothash} caption={caption} />
         </div>
       ) : (
         // Kompakt modus: cropped thumbnail with metadata
@@ -298,6 +309,19 @@ function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelet
             </div>
           )}
         </div>
+      )}
+
+      {/* Caption Edit Button (only in full mode) */}
+      {viewMode === 'full' && onEditCaption && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onEditCaption(position, caption || null)}
+          className="flex-shrink-0"
+          title={caption ? 'Rediger bildetekst' : 'Legg til bildetekst'}
+        >
+          <FileText className="h-4 w-4" />
+        </Button>
       )}
 
       {/* Visibility Toggle */}

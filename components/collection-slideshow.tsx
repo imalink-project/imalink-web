@@ -181,7 +181,11 @@ export function CollectionSlideshow({
       {/* Main content area */}
       <div className="absolute inset-0 flex items-center justify-center p-16">
         {currentItem?.type === 'photo' ? (
-          <PhotoSlide hothash={currentItem.photo_hothash} transition={transition} />
+          <PhotoSlide 
+            hothash={currentItem.photo_hothash} 
+            caption={currentItem.caption} 
+            transition={transition} 
+          />
         ) : currentItem?.type === 'text' ? (
           <TextSlide
             title={currentItem.text_card.title}
@@ -268,10 +272,11 @@ export function CollectionSlideshow({
 
 interface PhotoSlideProps {
   hothash: string;
+  caption?: string | null;
   transition: 'fade' | 'none';
 }
 
-function PhotoSlide({ hothash, transition }: PhotoSlideProps) {
+function PhotoSlide({ hothash, caption, transition }: PhotoSlideProps) {
   const [imageUrl, setImageUrl] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
@@ -314,11 +319,18 @@ function PhotoSlide({ hothash, transition }: PhotoSlideProps) {
   }
 
   return (
-    <img
-      src={imageUrl}
-      alt="Slide"
-      className={`max-h-full max-w-full object-contain ${transition === 'fade' ? 'transition-opacity duration-300' : ''}`}
-    />
+    <div className="flex h-full w-full flex-col items-center justify-center gap-4">
+      <img
+        src={imageUrl}
+        alt="Slide"
+        className={`max-h-[calc(100%-4rem)] max-w-full object-contain ${transition === 'fade' ? 'transition-opacity duration-300' : ''}`}
+      />
+      {caption && (
+        <p className="max-w-3xl text-center text-base text-white/90 px-8">
+          {caption}
+        </p>
+      )}
+    </div>
   );
 }
 

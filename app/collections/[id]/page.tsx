@@ -10,6 +10,7 @@ import type { Collection, PhotoWithTags, CollectionItem, CollectionTextCard, Col
 import { PhotoDetailDialog } from '@/components/photo-detail-dialog';
 import { CollectionItemGrid } from '@/components/collection-item-grid';
 import { TextCardEditor } from '@/components/text-card-editor';
+import { PhotoCaptionEditor } from '@/components/photo-caption-editor';
 import { CollectionSlideshow } from '@/components/collection-slideshow';
 import { PhotoGrid } from '@/components/photo-grid';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,10 @@ export default function CollectionDetailPage() {
   const [showTextEditor, setShowTextEditor] = useState(false);
   const [editingTextCardIndex, setEditingTextCardIndex] = useState<number | null>(null);
   const [editingTextCard, setEditingTextCard] = useState<CollectionTextCard | undefined>(undefined);
+  
+  const [showCaptionEditor, setShowCaptionEditor] = useState(false);
+  const [editingCaptionPosition, setEditingCaptionPosition] = useState<number | null>(null);
+  const [editingCaption, setEditingCaption] = useState<string | null>(null);
   
   const [showAddPhotosDialog, setShowAddPhotosDialog] = useState(false);
   const [showSlideshow, setShowSlideshow] = useState(false);
@@ -305,6 +310,44 @@ export default function CollectionDetailPage() {
     } catch (err) {
       console.error('Failed to toggle visibility:', err);
       alert('Kunne ikke endre synlighet');
+      // Revert on error
+      await loadCollectionData();
+    }
+  };
+
+  const handleEditCaption = (position: number, currentCaption: string | null) => {
+    setEditingCaptionPosition(position);
+    setEditingCaption(currentCaption);
+    setShowCaptionEditor(true);
+  };
+
+  const handleSaveCaption = async (caption: string | null) => {
+    if (!collection || editingCaptionPosition === null) return;
+    
+    try {
+      // Optimistic update - update local state immediately
+      const items = (collection as any).items as CollectionItem[] || [];
+      const updatedItems = [...items];
+      const item = updatedItems[editingCaptionPosition];
+      
+      if (item.type === 'photo') {
+        updatedItems[editingCaptionPosition] = { ...item, caption };
+        
+        setCollection({
+          ...collection,
+          items: updatedItems,
+        } as any);
+      }
+      
+      // Update backend in background
+      await apiClient.updateItemCaption(collectionId, editingCaptionPosition, caption);
+      
+      setShowCaptionEditor(false);
+      setEditingCaptionPosition(null);
+      setEditingCaption(null);
+    } catch (err) {
+      console.error('Failed to update caption:', err);
+      alert('Kunne ikke oppdatere bildetekst');
       // Revert on error
       await loadCollectionData();
     }
@@ -674,6 +717,7 @@ export default function CollectionDetailPage() {
           onEditTextCard={handleEditTextCard}
           onDeleteItem={handleDeleteItem}
           onToggleVisibility={handleToggleVisibility}
+          onEditCaption={handleEditCaption}
           cursorPosition={cursorPosition}
           onCursorChange={setCursorPosition}
           onAddTextCard={() => setShowTextEditor(true)}
@@ -710,6 +754,19 @@ export default function CollectionDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Caption editor */}
+      <PhotoCaptionEditor
+        isOpen={showCaptionEditor}
+        onClose={() => {
+          setShowCaptionEditor(false);
+          setEditingCaptionPosition(null);
+          setEditingCaption(null);
+        }}
+        onSave={handleSaveCaption}
+        initialCaption={editingCaption}
+        photoPosition={editingCaptionPosition ?? 0}
+      />
 
       {/* Text card editor */}
       <TextCardEditor

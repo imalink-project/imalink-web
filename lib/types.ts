@@ -56,6 +56,7 @@ export interface CollectionPhotoItem {
   type: 'photo';
   photo_hothash: string;
   visible?: boolean; // Default true if undefined (slideshow visibility)
+  caption?: string | null; // Optional caption for this photo in this collection
   photo?: PhotoWithTags; // Full photo data with metadata (when included by backend)
 }
 

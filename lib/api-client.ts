@@ -559,6 +559,16 @@ class ApiClient {
     }
   }
 
+  // Update item caption (photos only)
+  async updateItemCaption(collectionId: number, position: number, caption: string | null): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/collections/${collectionId}/items/${position}/caption`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ caption }),
+    });
+    await this.handleResponse(response);
+  }
+
   // ATOMIC: Move items from one position to another
   async moveCollectionItems(id: number, from_position: number, count: number, to_position: number): Promise<Collection> {
     const response = await fetch(`${this.baseUrl}/collections/${id}/items/move`, {
