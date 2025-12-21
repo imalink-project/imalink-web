@@ -280,11 +280,6 @@ function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelet
         <GripVertical className="h-5 w-5" />
       </div>
 
-      {/* Position Badge */}
-      <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-md bg-muted text-xs font-medium">
-        {position + 1}
-      </div>
-
       {/* Photo Thumbnail with metadata (uses PhotoStore) - wrapped with visual indicator */}
       <div className="relative">
         <PhotoThumbnail 
@@ -344,7 +339,7 @@ interface TextCardPreviewProps {
 
 function TextCardPreview({ card, visible, position, dragHandleProps, onEdit, onDelete, onToggleVisibility, viewMode = 'compact' }: TextCardPreviewProps) {
   if (viewMode === 'full') {
-    // Full mode: show text card with more space like a slide
+    // Full mode: show text card same as compact but with controls on top
     return (
       <div className={`flex flex-col gap-3 p-3 transition-all relative ${!visible ? 'border-l-4 border-l-muted-foreground/30' : ''}`}>
         {/* Top bar with controls */}
@@ -396,21 +391,25 @@ function TextCardPreview({ card, visible, position, dragHandleProps, onEdit, onD
           </Button>
         </div>
 
-        {/* Text card content - full display like a slide */}
-        <div className="flex items-center justify-center w-[150px] h-[150px] bg-muted/30 rounded-md p-4 relative">
-          <div className="text-center space-y-2">
-            <FileText className="h-8 w-8 mx-auto text-muted-foreground" />
-            <p className="font-semibold text-sm line-clamp-2">{card.title}</p>
-            {card.body && (
-              <p className="text-xs text-muted-foreground line-clamp-3">{card.body}</p>
-            )}
-          </div>
-          {!visible && (
-            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
-              <EyeOff className="h-3 w-3" />
-              <span>Skjult</span>
+        {/* Text card content - same as compact mode */}
+        <div className="flex items-start gap-2">
+          <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0 relative">
+            <div className="flex items-start gap-2">
+              <div className="flex-1">
+                <p className="font-semibold text-sm line-clamp-1">{card.title}</p>
+                {card.body && (
+                  <p className="text-xs text-muted-foreground line-clamp-2">{card.body}</p>
+                )}
+              </div>
+              {!visible && (
+                <div className="bg-muted text-muted-foreground text-xs px-1.5 py-0.5 rounded flex items-center gap-1 flex-shrink-0">
+                  <EyeOff className="h-3 w-3" />
+                  <span>Skjult</span>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     );
@@ -425,11 +424,6 @@ function TextCardPreview({ card, visible, position, dragHandleProps, onEdit, onD
         className="flex-shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground pt-1"
       >
         <GripVertical className="h-5 w-5" />
-      </div>
-
-      {/* Position Badge */}
-      <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-md bg-muted text-xs font-medium">
-        {position + 1}
       </div>
 
       {/* Text Card Content */}

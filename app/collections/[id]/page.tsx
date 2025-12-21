@@ -622,10 +622,10 @@ export default function CollectionDetailPage() {
               variant={viewMode === 'full' ? 'default' : 'outline'} 
               size="sm"
               onClick={() => setViewMode('full')}
-              title="Full visning (ikke beskåret)"
+              title="Stor visning (ikke beskåret)"
             >
               <Maximize2 className="mr-2 h-4 w-4" />
-              Full
+              Stor
             </Button>
             
             <div className="mx-2 h-6 w-px bg-border" />
