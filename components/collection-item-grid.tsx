@@ -254,11 +254,11 @@ function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelet
         </div>
 
         {/* Full size hotpreview image */}
-        <div className="relative w-full">
+        <div className="relative max-w-[150px]">
           <img
             src={hotpreviewUrl}
             alt={`Photo ${position + 1}`}
-            className="w-full h-auto rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+            className="max-w-[150px] h-auto rounded-md cursor-pointer hover:opacity-90 transition-opacity"
             onClick={onClick}
             loading="lazy"
           />
