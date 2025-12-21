@@ -135,6 +135,7 @@ export function CollectionItemGrid({
                         onEdit={() => onEditTextCard(index, item.text_card)}
                         onDelete={() => onDeleteItem(index)}
                         onToggleVisibility={onToggleVisibility}
+                        viewMode={viewMode}
                       />
                     )}
                   </div>
@@ -216,11 +217,6 @@ function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelet
             className="flex-shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
           >
             <GripVertical className="h-5 w-5" />
-          </div>
-
-          {/* Position Badge */}
-          <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-md bg-muted text-xs font-medium">
-            {position + 1}
           </div>
 
           <div className="flex-1" />
@@ -343,9 +339,84 @@ interface TextCardPreviewProps {
   onEdit: () => void;
   onDelete: () => void;
   onToggleVisibility?: (position: number, visible: boolean) => void;
+  viewMode?: 'compact' | 'full';
 }
 
-function TextCardPreview({ card, visible, position, dragHandleProps, onEdit, onDelete, onToggleVisibility }: TextCardPreviewProps) {
+function TextCardPreview({ card, visible, position, dragHandleProps, onEdit, onDelete, onToggleVisibility, viewMode = 'compact' }: TextCardPreviewProps) {
+  if (viewMode === 'full') {
+    // Full mode: show text card with more space like a slide
+    return (
+      <div className={`flex flex-col gap-3 p-3 transition-all relative ${!visible ? 'border-l-4 border-l-muted-foreground/30' : ''}`}>
+        {/* Top bar with controls */}
+        <div className="flex items-center gap-3">
+          {/* Drag Handle */}
+          <div
+            {...dragHandleProps}
+            className="flex-shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
+          >
+            <GripVertical className="h-5 w-5" />
+          </div>
+
+          <div className="flex-1" />
+
+          {/* Visibility Toggle */}
+          {onToggleVisibility && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onToggleVisibility(position, !visible)}
+              title={visible ? 'Skjul i lysbildevisning' : 'Vis i lysbildevisning'}
+            >
+              {visible ? (
+                <Eye className="h-4 w-4" />
+              ) : (
+                <EyeOff className="h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
+          )}
+
+          {/* Edit Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onEdit}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+
+          {/* Delete Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDelete}
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Text card content - full display like a slide */}
+        <div className="flex items-center justify-center w-[150px] h-[150px] bg-muted/30 rounded-md p-4 relative">
+          <div className="text-center space-y-2">
+            <FileText className="h-8 w-8 mx-auto text-muted-foreground" />
+            <p className="font-semibold text-sm line-clamp-2">{card.title}</p>
+            {card.body && (
+              <p className="text-xs text-muted-foreground line-clamp-3">{card.body}</p>
+            )}
+          </div>
+          {!visible && (
+            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+              <EyeOff className="h-3 w-3" />
+              <span>Skjult</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Compact mode: original layout
   return (
     <div className={`flex items-start gap-3 p-3 transition-all relative ${!visible ? 'border-l-4 border-l-muted-foreground/30' : ''}`}>
       {/* Drag Handle */}
