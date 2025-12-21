@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { FileText, GripVertical, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
+import { FileText, GripVertical, Pencil, Trash2, Eye, EyeOff, Calendar, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PhotoThumbnail } from '@/components/photo-thumbnail';
 import { apiClient } from '@/lib/api-client';
+import { usePhotoStore } from '@/lib/photo-store';
 import type { CollectionItem, CollectionTextCard } from '@/lib/types';
 
 interface CollectionItemGridProps {
@@ -191,6 +192,50 @@ export function CollectionItemGrid({
   );
 }
 
+// PhotoMetadata - Shows photo metadata as text (for stor mode)
+function PhotoMetadata({ hothash }: { hothash: string }) {
+  const { getPhoto } = usePhotoStore();
+  const photo = getPhoto(hothash);
+
+  if (!photo) {
+    return <div className="text-sm text-muted-foreground">Laster...</div>;
+  }
+
+  const formatDateTime = (dateString: string | null | undefined) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString('no-NO', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  return (
+    <div className="flex-1 min-w-0">
+      <p className="text-sm font-medium truncate">
+        {photo.primary_filename || 'Photo'}
+      </p>
+      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+        {photo.taken_at && (
+          <div className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            <span className="truncate">{formatDateTime(photo.taken_at)}</span>
+          </div>
+        )}
+        {photo.author && (
+          <div className="flex items-center gap-1">
+            <User className="h-3 w-3" />
+            <span className="truncate">{photo.author.name}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface PhotoItemPreviewProps {
   hothash: string;
   visible: boolean;
@@ -218,9 +263,9 @@ function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelet
 
       {/* Photo - different display based on viewMode */}
       {viewMode === 'full' ? (
-        // Stor modus: 150x150 uncropped preview with metadata below
-        <div className="relative flex flex-col gap-2">
-          <div className="relative flex items-center justify-center w-[150px] h-[150px]">
+        // Stor modus: 150x150 uncropped preview with metadata to the right
+        <div className="relative flex items-center gap-3 flex-1">
+          <div className="relative flex items-center justify-center w-[150px] h-[150px] flex-shrink-0">
             <img
               src={hotpreviewUrl}
               alt={`Photo ${position + 1}`}
@@ -235,13 +280,7 @@ function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelet
               </div>
             )}
           </div>
-          <PhotoThumbnail 
-            hothash={hothash}
-            size="small"
-            showMetadata={true}
-            onClick={onClick}
-            className="opacity-60"
-          />
+          <PhotoMetadata hothash={hothash} />
         </div>
       ) : (
         // Kompakt modus: cropped thumbnail with metadata
