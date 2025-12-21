@@ -12,6 +12,7 @@ import type {
   TagSummary,
   TagAutocomplete,
   Collection,
+  CollectionWithItems,
   CollectionCreate,
   CollectionUpdate,
   CollectionItem,
@@ -436,12 +437,12 @@ class ApiClient {
     return this.handleResponse<{ collections: Collection[]; total: number }>(response);
   }
 
-  async getCollection(id: number): Promise<Collection> {
+  async getCollection(id: number): Promise<CollectionWithItems> {
     const response = await fetch(`${this.baseUrl}/collections/${id}`, {
       headers: this.getHeaders(),
     });
 
-    return this.handleResponse<Collection>(response);
+    return this.handleResponse<CollectionWithItems>(response);
   }
 
   async createCollection(data: CollectionCreate): Promise<Collection> {

@@ -128,7 +128,7 @@ export function TextCardEditor({
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={!cardTitle.trim() || isSaving}>
-            {isSaving ? 'Saving...' : initialData ? 'Update' : 'Add'}
+            {isSaving ? 'Lagrer...' : (title.includes('Rediger') ? 'Oppdater' : 'Legg til')}
           </Button>
         </DialogFooter>
       </DialogContent>

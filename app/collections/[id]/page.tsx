@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { usePhotoStore } from '@/lib/photo-store';
 import { apiClient } from '@/lib/api-client';
 import { exportSlideshow } from '@/lib/slideshow-export';
-import type { Collection, PhotoWithTags, CollectionItem, CollectionTextCard } from '@/lib/types';
+import type { Collection, PhotoWithTags, CollectionItem, CollectionTextCard, CollectionWithItems } from '@/lib/types';
 import { PhotoDetailDialog } from '@/components/photo-detail-dialog';
 import { CollectionItemGrid } from '@/components/collection-item-grid';
 import { TextCardEditor } from '@/components/text-card-editor';
@@ -53,7 +53,7 @@ export default function CollectionDetailPage() {
   
   const collectionId = parseInt(params.id as string);
   
-  const [collection, setCollection] = useState<Collection | null>(null);
+  const [collection, setCollection] = useState<CollectionWithItems | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -96,7 +96,7 @@ export default function CollectionDetailPage() {
     try {
       const data = await apiClient.getCollection(collectionId);
       console.log('Collection data loaded:', data);
-      console.log('Items:', (data as any).items);
+      console.log('Items:', data.items);
       setCollection(data);
       setEditName(data.name);
       setEditDescription(data.description || '');
@@ -105,7 +105,7 @@ export default function CollectionDetailPage() {
       setLoading(false);
 
       // Pre-load all photos in items to PhotoStore (with progress bar)
-      const items = (data as any).items as CollectionItem[] || [];
+      const items = data.items || [];
       const hothashes = items
         .filter(item => item.type === 'photo')
         .map(item => item.photo_hothash);
@@ -222,19 +222,38 @@ export default function CollectionDetailPage() {
       if (editingTextCardIndex !== null) {
         // Update existing card
         await apiClient.updateCollectionTextCard(collectionId, editingTextCardIndex, card);
+        // Optimistic update: update local state
+        setCollection(prevCollection => {
+          if (!prevCollection) return prevCollection;
+          const updatedItems = [...prevCollection.items];
+          updatedItems[editingTextCardIndex] = { type: 'text', text_card: card, visible: updatedItems[editingTextCardIndex].visible };
+          return { ...prevCollection, items: updatedItems };
+        });
       } else {
         // Add new card - insert at cursor position (ATOMIC)
-        const items: CollectionItem[] = [{ type: 'text', text_card: card }];
+        const items: CollectionItem[] = [{ type: 'text', text_card: card, visible: true }];
+        const position = cursorPosition !== null ? cursorPosition : collection?.items.length || 0;
+        
         if (cursorPosition !== null) {
           await apiClient.insertItemsAtPosition(collectionId, cursorPosition, items);
         } else {
           await apiClient.addItemsToCollection(collectionId, items);
         }
+        
+        // Optimistic update: add to local state
+        setCollection(prevCollection => {
+          if (!prevCollection) return prevCollection;
+          const updatedItems = [...prevCollection.items];
+          updatedItems.splice(position, 0, ...items);
+          return { ...prevCollection, items: updatedItems };
+        });
+        
+        setCursorPosition(null); // Reset cursor after insert
       }
-      await loadCollectionData();
-      setCursorPosition(null); // Reset cursor after insert
     } catch (err) {
       console.error('Failed to save text card:', err);
+      // Revert on error
+      await loadCollectionData();
       throw err;
     }
   };

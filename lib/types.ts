@@ -70,6 +70,7 @@ export type CollectionItem = CollectionPhotoItem | CollectionTextItem;
 // Extended Collection with items (instead of hothashes)
 export interface CollectionWithItems {
   id: number;
+  user_id: number;
   name: string;
   description: string | null;
   items: CollectionItem[];          // Mixed content array
