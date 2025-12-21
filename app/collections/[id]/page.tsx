@@ -98,7 +98,10 @@ export default function CollectionDetailPage() {
       setEditName(data.name);
       setEditDescription(data.description || '');
 
-      // Pre-load all photos in items to PhotoStore
+      // Collection metadata loaded - can show UI now
+      setLoading(false);
+
+      // Pre-load all photos in items to PhotoStore (with progress bar)
       const items = (data as any).items as CollectionItem[] || [];
       const hothashes = items
         .filter(item => item.type === 'photo')
@@ -129,7 +132,6 @@ export default function CollectionDetailPage() {
     } catch (err) {
       console.error('Failed to load collection:', err);
       setError(err instanceof Error ? err.message : 'Kunne ikke laste samling');
-    } finally {
       setLoading(false);
     }
   };
