@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { X, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { X, ChevronLeft, ChevronRight, Play, Pause, Maximize, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { CollectionItem } from '@/lib/types';
 import { apiClient } from '@/lib/api-client';
 
@@ -24,9 +27,35 @@ export function CollectionSlideshow({
   
   const [currentIndex, setCurrentIndex] = useState(startIndex);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [interval, setInterval] = useState(4000); // milliseconds
+  const [transition, setTransition] = useState<'fade' | 'none'>('fade');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const currentItem = visibleItems[currentIndex];
   const totalItems = visibleItems.length;
+
+  // Fullscreen toggle
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  }, []);
+
+  // Listen to fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   // Auto-play functionality
   useEffect(() => {
@@ -34,10 +63,10 @@ export function CollectionSlideshow({
 
     const timer = setTimeout(() => {
       handleNext();
-    }, 4000); // 4 seconds per item
+    }, interval);
 
     return () => clearTimeout(timer);
-  }, [isPlaying, currentIndex, isOpen]);
+  }, [isPlaying, currentIndex, isOpen, interval]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -56,14 +85,22 @@ export function CollectionSlideshow({
           setIsPlaying(prev => !prev);
           break;
         case 'Escape':
-          onClose();
+          if (document.fullscreenElement) {
+            document.exitFullscreen();
+          } else {
+            onClose();
+          }
+          break;
+        case 'f':
+        case 'F':
+          toggleFullscreen();
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, currentIndex]);
+  }, [isOpen, currentIndex, toggleFullscreen]);
 
   // Reset to start index when opened
   useEffect(() => {
@@ -84,7 +121,7 @@ export function CollectionSlideshow({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black">
+    <div ref={containerRef} className="fixed inset-0 z-50 bg-black">
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
         <div className="flex items-center gap-4">
@@ -107,14 +144,34 @@ export function CollectionSlideshow({
             size="icon"
             onClick={() => setIsPlaying(!isPlaying)}
             className="text-white hover:bg-white/20"
+            title={isPlaying ? 'Pause' : 'Play'}
           >
             {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
           </Button>
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => setShowSettings(true)}
+            className="text-white hover:bg-white/20"
+            title="Innstillinger"
+          >
+            <Settings className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleFullscreen}
+            className="text-white hover:bg-white/20"
+            title={isFullscreen ? 'Avslutt fullskjerm (F)' : 'Fullskjerm (F)'}
+          >
+            <Maximize className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
             className="text-white hover:bg-white/20"
+            title="Lukk (Esc)"
           >
             <X className="h-6 w-6" />
           </Button>
@@ -124,11 +181,12 @@ export function CollectionSlideshow({
       {/* Main content area */}
       <div className="absolute inset-0 flex items-center justify-center p-16">
         {currentItem?.type === 'photo' ? (
-          <PhotoSlide hothash={currentItem.photo_hothash} />
+          <PhotoSlide hothash={currentItem.photo_hothash} transition={transition} />
         ) : currentItem?.type === 'text' ? (
           <TextSlide
             title={currentItem.text_card.title}
             body={currentItem.text_card.body}
+            transition={transition}
           />
         ) : null}
       </div>
@@ -150,15 +208,70 @@ export function CollectionSlideshow({
       >
         <ChevronRight className="h-10 w-10" />
       </Button>
+
+      {/* Settings Dialog */}
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Lysbildevisning - Innstillinger</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="interval">Intervall mellom bilder</Label>
+              <Select
+                value={interval.toString()}
+                onValueChange={(value) => setInterval(parseInt(value))}
+              >
+                <SelectTrigger id="interval">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="2000">2 sekunder</SelectItem>
+                  <SelectItem value="3000">3 sekunder</SelectItem>
+                  <SelectItem value="4000">4 sekunder (standard)</SelectItem>
+                  <SelectItem value="5000">5 sekunder</SelectItem>
+                  <SelectItem value="7000">7 sekunder</SelectItem>
+                  <SelectItem value="10000">10 sekunder</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="transition">Overgang</Label>
+              <Select
+                value={transition}
+                onValueChange={(value) => setTransition(value as 'fade' | 'none')}
+              >
+                <SelectTrigger id="transition">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fade">Fade</SelectItem>
+                  <SelectItem value="none">Ingen</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="pt-4 text-sm text-muted-foreground space-y-1">
+              <p><strong>Snarveier:</strong></p>
+              <p>← → : Navigér</p>
+              <p>Space: Play/Pause</p>
+              <p>F: Fullskjerm</p>
+              <p>Esc: Lukk</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 interface PhotoSlideProps {
   hothash: string;
+  transition: 'fade' | 'none';
 }
 
-function PhotoSlide({ hothash }: PhotoSlideProps) {
+function PhotoSlide({ hothash, transition }: PhotoSlideProps) {
   const [imageUrl, setImageUrl] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
@@ -204,7 +317,7 @@ function PhotoSlide({ hothash }: PhotoSlideProps) {
     <img
       src={imageUrl}
       alt="Slide"
-      className="max-h-full max-w-full object-contain transition-opacity duration-300"
+      className={`max-h-full max-w-full object-contain ${transition === 'fade' ? 'transition-opacity duration-300' : ''}`}
     />
   );
 }
@@ -212,11 +325,12 @@ function PhotoSlide({ hothash }: PhotoSlideProps) {
 interface TextSlideProps {
   title: string;
   body: string;
+  transition: 'fade' | 'none';
 }
 
-function TextSlide({ title, body }: TextSlideProps) {
+function TextSlide({ title, body, transition }: TextSlideProps) {
   return (
-    <div className="w-full max-w-4xl bg-white rounded-lg shadow-2xl p-12 text-center">
+    <div className={`w-full max-w-4xl bg-white rounded-lg shadow-2xl p-12 text-center ${transition === 'fade' ? 'transition-opacity duration-300' : ''}`}>
       <h1 className="text-4xl font-bold mb-6 text-gray-900">{title}</h1>
       {body && (
         <p className="text-xl text-gray-700 whitespace-pre-wrap leading-relaxed">
