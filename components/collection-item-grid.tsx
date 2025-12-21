@@ -198,7 +198,7 @@ interface PhotoItemPreviewProps {
 
 function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelete, onToggleVisibility, onClick }: PhotoItemPreviewProps) {
   return (
-    <div className={`flex items-center gap-3 p-3 transition-all ${!visible ? 'opacity-50 bg-muted/30' : ''}`}>
+    <div className={`flex items-center gap-3 p-3 transition-all relative ${!visible ? 'border-l-4 border-l-muted-foreground/30' : ''}`}>
       {/* Drag Handle */}
       <div
         {...dragHandleProps}
@@ -212,13 +212,21 @@ function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelet
         {position + 1}
       </div>
 
-      {/* Photo Thumbnail with metadata (uses PhotoStore) */}
-      <PhotoThumbnail 
-        hothash={hothash}
-        size="medium"
-        showMetadata={true}
-        onClick={onClick}
-      />
+      {/* Photo Thumbnail with metadata (uses PhotoStore) - wrapped with visual indicator */}
+      <div className="relative">
+        <PhotoThumbnail 
+          hothash={hothash}
+          size="medium"
+          showMetadata={true}
+          onClick={onClick}
+        />
+        {!visible && (
+          <div className="absolute top-1 right-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
+            <EyeOff className="h-3 w-3" />
+            <span>Skjult</span>
+          </div>
+        )}
+      </div>
 
       {/* Visibility Toggle */}
       {onToggleVisibility && (
@@ -262,7 +270,7 @@ interface TextCardPreviewProps {
 
 function TextCardPreview({ card, visible, position, dragHandleProps, onEdit, onDelete, onToggleVisibility }: TextCardPreviewProps) {
   return (
-    <div className={`flex items-start gap-3 p-3 transition-all ${!visible ? 'opacity-50 bg-muted/30' : ''}`}>
+    <div className={`flex items-start gap-3 p-3 transition-all relative ${!visible ? 'border-l-4 border-l-muted-foreground/30' : ''}`}>
       {/* Drag Handle */}
       <div
         {...dragHandleProps}
@@ -277,11 +285,21 @@ function TextCardPreview({ card, visible, position, dragHandleProps, onEdit, onD
       </div>
 
       {/* Text Card Content */}
-      <div className="flex-1 min-w-0 space-y-1">
-        <p className="font-semibold text-sm line-clamp-1">{card.title}</p>
-        {card.body && (
-          <p className="text-xs text-muted-foreground line-clamp-2">{card.body}</p>
-        )}
+      <div className="flex-1 min-w-0 space-y-1 relative">
+        <div className="flex items-start gap-2">
+          <div className="flex-1">
+            <p className="font-semibold text-sm line-clamp-1">{card.title}</p>
+            {card.body && (
+              <p className="text-xs text-muted-foreground line-clamp-2">{card.body}</p>
+            )}
+          </div>
+          {!visible && (
+            <div className="bg-muted text-muted-foreground text-xs px-1.5 py-0.5 rounded flex items-center gap-1 flex-shrink-0">
+              <EyeOff className="h-3 w-3" />
+              <span>Skjult</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Action Buttons */}

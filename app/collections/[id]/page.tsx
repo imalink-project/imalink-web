@@ -181,11 +181,22 @@ export default function CollectionDetailPage() {
 
   const handleReorderItems = async (newItems: CollectionItem[]) => {
     try {
+      // Optimistic UI update: update local state immediately
+      setCollection(prevCollection => {
+        if (!prevCollection) return prevCollection;
+        return {
+          ...prevCollection,
+          items: newItems
+        } as any;
+      });
+
+      // Sync backend in background
       await apiClient.reorderCollectionItems(collectionId, newItems);
-      await loadCollectionData();
     } catch (err) {
       console.error('Failed to reorder items:', err);
       alert('Kunne ikke endre rekkefølge');
+      // Revert on error
+      await loadCollectionData();
     }
   };
 
@@ -229,21 +240,49 @@ export default function CollectionDetailPage() {
     }
 
     try {
+      // Optimistic UI update: remove item from local state immediately
+      setCollection(prevCollection => {
+        if (!prevCollection) return prevCollection;
+        const currentItems = (prevCollection as any).items || [];
+        const updatedItems = [...currentItems];
+        updatedItems.splice(position, 1);
+        return {
+          ...prevCollection,
+          items: updatedItems
+        } as any;
+      });
+
+      // Sync backend in background
       await apiClient.deleteCollectionItem(collectionId, position);
-      await loadCollectionData();
     } catch (err) {
       console.error('Failed to delete item:', err);
       alert('Kunne ikke slette element');
+      // Revert on error
+      await loadCollectionData();
     }
   };
 
   const handleToggleVisibility = async (position: number, visible: boolean) => {
+    if (!collection) return;
+    
     try {
+      // Optimistic update - update local state immediately
+      const items = (collection as any).items as CollectionItem[] || [];
+      const updatedItems = [...items];
+      updatedItems[position] = { ...updatedItems[position], visible };
+      
+      setCollection({
+        ...collection,
+        items: updatedItems,
+      } as any);
+      
+      // Update backend in background
       await apiClient.toggleItemVisibility(collectionId, position, visible);
-      await loadCollectionData();
     } catch (err) {
       console.error('Failed to toggle visibility:', err);
       alert('Kunne ikke endre synlighet');
+      // Revert on error
+      await loadCollectionData();
     }
   };
 
@@ -253,17 +292,24 @@ export default function CollectionDetailPage() {
     try {
       const items = (collection as any).items as CollectionItem[] || [];
       
-      // Find all hidden items and show them
+      // Optimistic update - update all to visible immediately
+      const updatedItems = items.map(item => ({ ...item, visible: true }));
+      setCollection({
+        ...collection,
+        items: updatedItems,
+      } as any);
+      
+      // Update backend in background
       for (let i = 0; i < items.length; i++) {
         if (items[i].visible === false) {
           await apiClient.toggleItemVisibility(collectionId, i, true);
         }
       }
-      
-      await loadCollectionData();
     } catch (err) {
       console.error('Failed to show all items:', err);
       alert('Kunne ikke vise alle elementer');
+      // Revert on error
+      await loadCollectionData();
     }
   };
 
@@ -277,17 +323,24 @@ export default function CollectionDetailPage() {
     try {
       const items = (collection as any).items as CollectionItem[] || [];
       
-      // Hide all items
+      // Optimistic update - update all to invisible immediately
+      const updatedItems = items.map(item => ({ ...item, visible: false }));
+      setCollection({
+        ...collection,
+        items: updatedItems,
+      } as any);
+      
+      // Update backend in background
       for (let i = 0; i < items.length; i++) {
         if (items[i].visible !== false) {
           await apiClient.toggleItemVisibility(collectionId, i, false);
         }
       }
-      
-      await loadCollectionData();
     } catch (err) {
       console.error('Failed to hide all items:', err);
       alert('Kunne ikke skjule alle elementer');
+      // Revert on error
+      await loadCollectionData();
     }
   };
 
