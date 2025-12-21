@@ -205,71 +205,7 @@ interface PhotoItemPreviewProps {
 function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelete, onToggleVisibility, onClick, viewMode = 'compact' }: PhotoItemPreviewProps) {
   const hotpreviewUrl = apiClient.getHotPreviewUrl(hothash);
   
-  if (viewMode === 'full') {
-    // Full mode: show uncropped hotpreview at full width
-    return (
-      <div className={`flex flex-col gap-3 p-3 transition-all relative ${!visible ? 'border-l-4 border-l-muted-foreground/30' : ''}`}>
-        {/* Top bar with controls */}
-        <div className="flex items-center gap-3">
-          {/* Drag Handle */}
-          <div
-            {...dragHandleProps}
-            className="flex-shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
-          >
-            <GripVertical className="h-5 w-5" />
-          </div>
-
-          <div className="flex-1" />
-
-          {/* Visibility Toggle */}
-          {onToggleVisibility && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onToggleVisibility(position, !visible)}
-              className="flex-shrink-0"
-              title={visible ? 'Skjul i lysbildevisning' : 'Vis i lysbildevisning'}
-            >
-              {visible ? (
-                <Eye className="h-4 w-4" />
-              ) : (
-                <EyeOff className="h-4 w-4 text-muted-foreground" />
-              )}
-            </Button>
-          )}
-
-          {/* Delete Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onDelete}
-            className="flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Full size hotpreview image - contained within 150x150 like a slideshow */}
-        <div className="relative flex items-center justify-center w-[150px] h-[150px]">
-          <img
-            src={hotpreviewUrl}
-            alt={`Photo ${position + 1}`}
-            className="max-w-[150px] max-h-[150px] w-auto h-auto object-contain rounded-md cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={onClick}
-            loading="lazy"
-          />
-          {!visible && (
-            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
-              <EyeOff className="h-3 w-3" />
-              <span>Skjult</span>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Compact mode: original layout with cropped thumbnail
+  // Same layout for both modes, only difference is the image display
   return (
     <div className={`flex items-center gap-3 p-3 transition-all relative ${!visible ? 'border-l-4 border-l-muted-foreground/30' : ''}`}>
       {/* Drag Handle */}
@@ -280,14 +216,28 @@ function PhotoItemPreview({ hothash, visible, position, dragHandleProps, onDelet
         <GripVertical className="h-5 w-5" />
       </div>
 
-      {/* Photo Thumbnail with metadata (uses PhotoStore) - wrapped with visual indicator */}
+      {/* Photo - different display based on viewMode */}
       <div className="relative">
-        <PhotoThumbnail 
-          hothash={hothash}
-          size="medium"
-          showMetadata={true}
-          onClick={onClick}
-        />
+        {viewMode === 'full' ? (
+          // Stor modus: 150x150 uncropped preview
+          <div className="relative flex items-center justify-center w-[150px] h-[150px]">
+            <img
+              src={hotpreviewUrl}
+              alt={`Photo ${position + 1}`}
+              className="max-w-[150px] max-h-[150px] w-auto h-auto object-contain rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={onClick}
+              loading="lazy"
+            />
+          </div>
+        ) : (
+          // Kompakt modus: cropped thumbnail with metadata
+          <PhotoThumbnail 
+            hothash={hothash}
+            size="medium"
+            showMetadata={true}
+            onClick={onClick}
+          />
+        )}
         {!visible && (
           <div className="absolute top-1 right-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
             <EyeOff className="h-3 w-3" />
